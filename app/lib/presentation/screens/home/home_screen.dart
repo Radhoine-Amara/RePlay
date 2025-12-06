@@ -629,34 +629,39 @@ Widget _buildItemCard(ItemModel item) {
   }
 
   Widget _buildTypeBadge(String type) {
-    Color color;
-    String label;
-    if (type == AppStrings.rent) {
-      color = AppColors.info;
-      label = AppStrings.rent;
-    } else if (type == AppStrings.trade) {
-      color = AppColors.primaryLight;
-      label = AppStrings.trade;
-    } else {
-      color = AppColors.success;
-      label = AppStrings.sell;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 11,
-        ),
-      ),
-    );
+  Color color;
+  String label;
+  
+  // Convert to lowercase for consistent comparison
+  final typeLower = type.toLowerCase();
+  
+  if (typeLower == 'rent' || typeLower == AppStrings.rent.toLowerCase()) {
+    color = AppColors.info;
+    label = AppStrings.rent; // Display as "Rent"
+  } else if (typeLower == 'trade' || typeLower == AppStrings.trade.toLowerCase()) {
+    color = AppColors.primaryLight;
+    label = AppStrings.trade; // Display as "Trade"
+  } else {
+    color = AppColors.success;
+    label = AppStrings.sell; // Display as "Sell"
   }
+  
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.bold,
+        fontSize: 11,
+      ),
+    ),
+  );
+}
 
   Widget _buildFavoriteButton(int itemId) {
     final isFavorited = _favoritedItemIds.contains(itemId);
