@@ -31,7 +31,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _selectedImageFile;
   bool _isLoading = true;
   bool _isSaving = false;
-  // ignore: unused_field
   bool _isUploadingImage = false;
 
   @override
@@ -87,10 +86,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return;
       }
 
+      // Upload image if a file is selected
+      String? imageUrl = _previewImageUrl;
+      if (_selectedImageFile != null) {
+        imageUrl = await _uploadImageToSupabase();
+        if (imageUrl == null) {
+          _showSnackbar('Failed to upload image', isError: true);
+          setState(() => _isSaving = false);
+          return;
+        }
+      }
+
       // Prepare updates
       Map<String, dynamic> updates = {
         'username': _usernameController.text.trim(),
         'email': _emailController.text.trim(),
+        'imageurl': imageUrl,
       };
 
       if (_phoneController.text.trim().isNotEmpty) {
@@ -99,15 +110,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           updates['phonenum'] = phone;
         }
       }
-
-      // Upload image if a file is selected, otherwise use URL
-      String? imageUrl;
-      if (_selectedImageFile != null) {
-        imageUrl = await _uploadImageToSupabase();
-      } else if (_previewImageUrl != null && _previewImageUrl!.isNotEmpty) {
-        imageUrl = _previewImageUrl;
-      }
-      updates['imageurl'] = imageUrl;
 
       // Update in database
       final success = await _userService.updateUser(
@@ -118,6 +120,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (success) {
         _showSnackbar('Profile updated successfully!', isError: false);
         await _loadUserProfile(); // Reload to confirm changes
+        setState(() {
+          _selectedImageFile = null; // Clear selected file after save
+        });
       } else {
         _showSnackbar('Failed to update profile', isError: true);
       }
@@ -128,84 +133,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _signOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Are you sure you want to sign out?',
-          style: TextStyle(color: Colors.grey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF9C4DFF),
-            ),
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
-    );
+  Future<String?> _uploadImageToSupabase() async {
+    if (_selectedImageFile == null) return _previewImageUrl;
 
-    if (confirmed == true) {
-      await _authService.signOut();
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
-      }
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final fileName = 'profile_${_currentUser!.userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final bytes = await _selectedImageFile!.readAsBytes();
+
+      // Upload to Supabase Storage
+      await Supabase.instance.client.storage
+          .from('profile-images')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+
+      // Get public URL
+      final imageUrl = Supabase.instance.client.storage
+          .from('profile-images')
+          .getPublicUrl(fileName);
+
+      _showSnackbar('Image uploaded successfully!', isError: false);
+      return imageUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      _showSnackbar('Error uploading image: ${e.toString()}', isError: true);
+      return null;
+    } finally {
+      setState(() => _isUploadingImage = false);
     }
   }
 
-  Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Delete Account',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to delete your account? This action cannot be undone.',
-          style: TextStyle(color: Colors.grey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
 
-    if (confirmed == true && _currentUser != null) {
-      // Delete from database
-      await _userService.deleteUser(_currentUser!.userId!);
-      // Delete auth user
-      await _authService.signOut();
-
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImageFile = File(pickedFile.path);
+          _previewImageUrl = null; // Will show file preview instead
+        });
+        _showSnackbar('Image selected. Click Save Changes to upload.', isError: false);
       }
+    } catch (e) {
+      _showSnackbar('Error picking image: $e', isError: true);
     }
   }
 
@@ -231,6 +213,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              
               // Take Photo option
               ListTile(
                 leading: Container(
@@ -241,15 +224,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: const Icon(Icons.camera_alt, color: Color(0xFF9C4DFF)),
                 ),
-                title: const Text(
-                  'Take Photo',
-                  style: TextStyle(color: Colors.white),
-                ),
+                title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
                 },
               ),
+              
               // Choose from Gallery option
               ListTile(
                 leading: Container(
@@ -258,20 +239,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: const Color(0xFF9C4DFF).withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.photo_library,
-                    color: Color(0xFF9C4DFF),
-                  ),
+                  child: const Icon(Icons.photo_library, color: Color(0xFF9C4DFF)),
                 ),
-                title: const Text(
-                  'Choose from Gallery',
-                  style: TextStyle(color: Colors.white),
-                ),
+                title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
                 },
               ),
+              
               // Enter URL option
               ListTile(
                 leading: Container(
@@ -282,16 +258,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: const Icon(Icons.link, color: Color(0xFF9C4DFF)),
                 ),
-                title: const Text(
-                  'Enter Image URL',
-                  style: TextStyle(color: Colors.white),
-                ),
+                title: const Text('Enter Image URL', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showUrlInputDialog();
                 },
               ),
-              // Remove photo option (if there's a photo)
+              
+              // Remove photo option
               if (_previewImageUrl != null || _selectedImageFile != null)
                 ListTile(
                   leading: Container(
@@ -302,10 +276,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     child: const Icon(Icons.delete, color: Colors.red),
                   ),
-                  title: const Text(
-                    'Remove Photo',
-                    style: TextStyle(color: Colors.red),
-                  ),
+                  title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
                   onTap: () {
                     Navigator.pop(ctx);
                     setState(() {
@@ -323,80 +294,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _imagePicker.pickImage(
-        source: source,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 75,
-      );
-
-      if (pickedFile != null) {
-        setState(() {
-          _selectedImageFile = File(pickedFile.path);
-          _previewImageUrl = null; // Clear URL preview when file is selected
-        });
-      }
-    } catch (e) {
-      _showSnackbar('Error picking image: $e', isError: true);
-    }
-  }
-
-  Future<String?> _uploadImageToSupabase() async {
-    if (_selectedImageFile == null) return _previewImageUrl;
-
-    setState(() => _isUploadingImage = true);
-
-    try {
-      final fileName =
-          'profile_${_currentUser!.userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final bytes = await _selectedImageFile!.readAsBytes();
-
-      await Supabase.instance.client.storage
-          .from('profile-images')
-          .uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
-          );
-
-      final imageUrl = Supabase.instance.client.storage
-          .from('profile-images')
-          .getPublicUrl(fileName);
-
-      return imageUrl;
-    } catch (e) {
-      print('Error uploading image: $e');
-      _showSnackbar(
-        'Error uploading image. Using URL if provided.',
-        isError: true,
-      );
-      return _imageUrlController.text.isNotEmpty
-          ? _imageUrlController.text
-          : null;
-    } finally {
-      setState(() => _isUploadingImage = false);
-    }
-  }
-
   void _showUrlInputDialog() {
+    final tempController = TextEditingController(text: _imageUrlController.text);
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Enter Image URL',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Enter Image URL', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: _imageUrlController,
+              controller: tempController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'https://example.com/image.jpg',
@@ -413,30 +323,101 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              _imageUrlController.text = _previewImageUrl ?? '';
-              Navigator.pop(ctx);
-            },
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
-              setState(() {
-                _previewImageUrl = _imageUrlController.text.trim().isEmpty
-                    ? null
-                    : _imageUrlController.text.trim();
-                _selectedImageFile = null; // Clear file when URL is set
-              });
+              final url = tempController.text.trim();
+              if (url.isNotEmpty) {
+                setState(() {
+                  _previewImageUrl = url;
+                  _imageUrlController.text = url;
+                  _selectedImageFile = null; // Clear file when URL is set
+                });
+              }
               Navigator.pop(ctx);
             },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF9C4DFF),
-            ),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF9C4DFF)),
             child: const Text('Apply'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _signOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF9C4DFF)),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _authService.signOut();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('Delete Account', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to delete your account? This action cannot be undone.',
+          style: TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && _currentUser != null) {
+      await _userService.deleteUser(_currentUser!.userId!);
+      await _authService.signOut();
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
   }
 
   void _showSnackbar(String message, {required bool isError}) {
@@ -512,28 +493,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     height: 100,
                                   ),
                                 )
-                              : _previewImageUrl != null &&
-                                    _previewImageUrl!.isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(
-                                    _previewImageUrl!,
-                                    fit: BoxFit.cover,
-                                    width: 100,
-                                    height: 100,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.person,
-                                        size: 60,
-                                        color: Colors.white,
-                                      );
-                                    },
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: Colors.white,
-                                ),
+                              : _previewImageUrl != null && _previewImageUrl!.isNotEmpty
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        _previewImageUrl!,
+                                        fit: BoxFit.cover,
+                                        width: 100,
+                                        height: 100,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(
+                                            Icons.person,
+                                            size: 60,
+                                            color: Colors.white,
+                                          );
+                                        },
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return const Center(
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: Colors.white,
+                                    ),
                         ),
                         Positioned(
                           bottom: 0,
@@ -541,15 +530,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.grey[800],
+                              color: const Color(0xFF9C4DFF),
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.black, width: 2),
                             ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 16,
-                              color: Colors.white,
-                            ),
+                            child: _isUploadingImage
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.camera_alt,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                           ),
                         ),
                       ],
@@ -596,6 +594,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // Username
                   const Text(
                     'Username',
                     style: TextStyle(
@@ -623,6 +622,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // Email
                   const Text(
                     'Email Address',
                     style: TextStyle(
@@ -634,7 +634,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
-                    enabled: false, // Email cannot be changed
+                    enabled: false,
                     style: const TextStyle(color: Colors.white70),
                     decoration: InputDecoration(
                       hintText: 'Email address',
@@ -650,6 +650,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // Phone
                   const Text(
                     'Phone Number (optional)',
                     style: TextStyle(
@@ -678,7 +679,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Save Changes Button
+                  // Save Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -686,9 +687,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       onPressed: _isSaving ? null : _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF9C4DFF),
-                        disabledBackgroundColor: const Color(
-                          0xFF9C4DFF,
-                        ).withOpacity(0.5),
+                        disabledBackgroundColor: const Color(0xFF9C4DFF).withOpacity(0.5),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
