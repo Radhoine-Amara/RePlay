@@ -734,51 +734,58 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildPriceTag(ItemModel item) {
-    String priceText;
-    if (item.type == AppStrings.rent) {
-      priceText = '\$${item.price ?? 0}/${AppStrings.rent.toLowerCase()}';
-    } else if (item.type == AppStrings.trade) {
-      priceText = AppStrings.trade;
-    } else {
-      priceText = '\$${item.price ?? 0}';
-    }
-    return Text(
-      priceText,
-      style: const TextStyle(
-        color: AppColors.primary,
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
-    );
+  String priceText;
+  final type = item.type?.toLowerCase() ?? 'sell';
+  
+  if (type == 'rent') {
+    priceText = '\$${item.price ?? 0}/day'; // or ${AppStrings.rent.toLowerCase()}
+  } else if (type == 'trade') {
+    priceText = AppStrings.trade;
+  } else {
+    priceText = '\$${item.price ?? 0}';
   }
+  return Text(
+    priceText,
+    style: const TextStyle(
+      color: AppColors.primary,
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    ),
+  );
+}
 
   Widget _buildTypeBadge(String type) {
-    Color color;
-    String label;
-    if (type == AppStrings.rent) {
-      color = AppColors.info;
-      label = AppStrings.rent;
-    } else if (type == AppStrings.trade) {
-      color = AppColors.primaryLight;
-      label = AppStrings.trade;
-    } else {
-      color = AppColors.success;
-      label = AppStrings.sell;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 11,
-        ),
-      ),
-    );
+  Color color;
+  String label;
+  
+  // Convert to lowercase for consistent comparison
+  final typeLower = type.toLowerCase();
+  
+  if (typeLower == 'rent') {
+    color = AppColors.info;
+    label = AppStrings.rent; // This displays as "Rent"
+  } else if (typeLower == 'trade') {
+    color = AppColors.primaryLight;
+    label = AppStrings.trade; // This displays as "Trade"
+  } else {
+    color = AppColors.success;
+    label = AppStrings.sell; // This displays as "Sell"
   }
+  
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.bold,
+        fontSize: 11,
+      ),
+    ),
+  );
+}
 }
