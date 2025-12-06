@@ -1,9 +1,12 @@
 // FILE: lib/screens/add_listing_screen.dart
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../data/datasources/item_service.dart';
 import '../../../data/datasources/auth_service.dart';
 import '../../../data/datasources/user_service.dart';
+import '../../../data/datasources/supabase_service.dart';
 import '../../../data/models/item_model.dart';
 import '../home/home_screen.dart';
 
@@ -37,6 +40,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
   final TextEditingController _platformController = TextEditingController();
 
   bool _isSubmitting = false;
+
+  // Image handling
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _selectedImage;
+  bool _useUrlInput = false; // false = use device storage, true = use URL input
 
   @override
   void dispose() {
@@ -83,30 +91,187 @@ class _AddListingScreenState extends State<AddListingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Image URL',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Product Image',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      // Toggle between URL and Storage
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => setState(() => _useUrlInput = false),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: !_useUrlInput
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.2),
+                                borderRadius: const BorderRadius.horizontal(
+                                  left: Radius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                'Upload',
+                                style: TextStyle(
+                                  color: !_useUrlInput
+                                      ? const Color(0xFF9C4DFF)
+                                      : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => setState(() => _useUrlInput = true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _useUrlInput
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.2),
+                                borderRadius: const BorderRadius.horizontal(
+                                  right: Radius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                'URL',
+                                style: TextStyle(
+                                  color: _useUrlInput
+                                      ? const Color(0xFF9C4DFF)
+                                      : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _imageUrlController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'https://example.com/image.jpg',
-                      hintStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.image, color: Colors.white),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+                  if (_useUrlInput)
+                    // URL Input
+                    TextFormField(
+                      controller: _imageUrlController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'https://example.com/image.jpg',
+                        hintStyle: const TextStyle(color: Colors.white70),
+                        prefixIcon: const Icon(Icons.link, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
                       ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.2),
+                    )
+                  else
+                    // Upload from device
+                    Column(
+                      children: [
+                        if (_selectedImage != null)
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  _selectedImage!,
+                                  height: 150,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _selectedImage = null),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          GestureDetector(
+                            onTap: _showImagePickerOptions,
+                            child: Container(
+                              height: 120,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 2,
+                                  style: BorderStyle.solid,
+                                ),
+                              ),
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    color: Colors.white,
+                                    size: 40,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Tap to add image',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (_selectedImage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: TextButton.icon(
+                              onPressed: _showImagePickerOptions,
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'Change Image',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
                 ],
               ),
             ),
@@ -453,6 +618,99 @@ class _AddListingScreenState extends State<AddListingScreen> {
     );
   }
 
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Image Source',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF9C4DFF),
+                ),
+                title: const Text(
+                  'Gallery',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF9C4DFF)),
+                title: const Text(
+                  'Camera',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      _showSnackbar('Failed to pick image: ${e.toString()}', isError: true);
+    }
+  }
+
+  Future<String?> _uploadImageToSupabase(File imageFile) async {
+    try {
+      final fileName = 'item_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final filePath = 'items/$fileName';
+
+      await SupabaseService.client.storage
+          .from('item-images')
+          .upload(filePath, imageFile);
+
+      final publicUrl = SupabaseService.client.storage
+          .from('item-images')
+          .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      return null;
+    }
+  }
+
   Future<void> _submitListing() async {
     // Validation
     if (_titleController.text.trim().isEmpty) {
@@ -504,6 +762,26 @@ class _AddListingScreenState extends State<AddListingScreen> {
         }
       }
 
+      // Handle image URL - either from upload or direct URL input
+      String? finalImageUrl;
+      if (_useUrlInput) {
+        // Using URL input
+        finalImageUrl = _imageUrlController.text.trim().isEmpty
+            ? null
+            : _imageUrlController.text.trim();
+      } else if (_selectedImage != null) {
+        // Upload image to Supabase storage
+        finalImageUrl = await _uploadImageToSupabase(_selectedImage!);
+        if (finalImageUrl == null) {
+          _showSnackbar(
+            'Failed to upload image. Please try again.',
+            isError: true,
+          );
+          setState(() => _isSubmitting = false);
+          return;
+        }
+      }
+
       // Build ItemModel
       final newItem = ItemModel(
         title: _titleController.text.trim(),
@@ -513,9 +791,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
         price: price,
         userId: userId,
         status: true,
-        imageUrl: _imageUrlController.text.trim().isEmpty
-            ? null
-            : _imageUrlController.text.trim(),
+        imageUrl: finalImageUrl,
         platform: _platformController.text.trim().isEmpty
             ? null
             : _platformController.text.trim(),
@@ -539,6 +815,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
         _priceController.clear();
         _imageUrlController.clear();
         _platformController.clear();
+        setState(() {
+          _selectedImage = null;
+          _useUrlInput = false;
+        });
 
         // Navigate appropriately after a short delay
         await Future.delayed(const Duration(milliseconds: 500));
