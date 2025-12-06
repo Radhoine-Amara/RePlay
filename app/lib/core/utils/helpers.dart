@@ -38,13 +38,63 @@ class Helpers {
     showSnackbar(context, message, backgroundColor: Colors.blue);
   }
 
+  /// Validates phone number format
+  static bool isValidPhoneNumber(String? phoneNumber) {
+    if (phoneNumber == null || phoneNumber.isEmpty) return false;
+    // Remove any non-digit characters except +
+    final cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    // Must have at least 9 digits
+    return cleaned.replaceAll('+', '').length >= 9;
+  }
+
+  /// Validates email format
+  static bool isValidEmail(String? email) {
+    if (email == null || email.isEmpty) return false;
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
+  }
+
+  /// Formats phone number for international use (adds country code if needed)
+  static String formatPhoneForInternational(
+    String phoneNumber, {
+    String defaultCountryCode = '213',
+  }) {
+    // Remove all non-digit characters
+    String cleaned = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+    // If it starts with 0, remove it and add country code
+    if (cleaned.startsWith('0')) {
+      cleaned = defaultCountryCode + cleaned.substring(1);
+    }
+    // If it doesn't start with country code, add it
+    else if (!cleaned.startsWith(defaultCountryCode) && cleaned.length <= 10) {
+      cleaned = defaultCountryCode + cleaned;
+    }
+
+    return cleaned;
+  }
+
   /// Opens a phone dialer with the given phone number
   static Future<void> makePhoneCall(String phoneNumber) async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (!isValidPhoneNumber(phoneNumber)) {
+      throw 'Invalid phone number';
+    }
 
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    } else {
+    // Format with + for tel: scheme
+    final formattedNumber = '+${formatPhoneForInternational(phoneNumber)}';
+    final Uri phoneUri = Uri(scheme: 'tel', path: formattedNumber);
+
+    debugPrint('makePhoneCall: Attempting to launch $phoneUri');
+
+    try {
+      final launched = await launchUrl(phoneUri);
+      if (!launched) {
+        debugPrint('makePhoneCall: launchUrl returned false');
+        throw 'Could not launch phone dialer';
+      }
+      debugPrint('makePhoneCall: Successfully launched');
+    } catch (e) {
+      debugPrint('makePhoneCall: Error - $e');
       throw 'Could not launch phone dialer';
     }
   }
@@ -54,16 +104,34 @@ class Helpers {
     String phoneNumber, [
     String? message,
   ]) async {
-    // Remove any non-digit characters from phone number
-    final cleanNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
+    if (!isValidPhoneNumber(phoneNumber)) {
+      throw 'Invalid phone number';
+    }
 
-    final Uri whatsappUri = Uri.parse(
-      'https://wa.me/$cleanNumber${message != null ? '?text=${Uri.encodeComponent(message)}' : ''}',
-    );
+    // Format phone number for WhatsApp (international format without +)
+    final cleanNumber = formatPhoneForInternational(phoneNumber);
 
-    if (await canLaunchUrl(whatsappUri)) {
-      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-    } else {
+    // Build WhatsApp URL using https://wa.me format
+    final String whatsappUrl = message != null
+        ? 'https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}'
+        : 'https://wa.me/$cleanNumber';
+
+    final Uri whatsappUri = Uri.parse(whatsappUrl);
+
+    debugPrint('openWhatsApp: Attempting to launch $whatsappUri');
+
+    try {
+      final launched = await launchUrl(
+        whatsappUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        debugPrint('openWhatsApp: launchUrl returned false');
+        throw 'Could not launch WhatsApp';
+      }
+      debugPrint('openWhatsApp: Successfully launched');
+    } catch (e) {
+      debugPrint('openWhatsApp: Error - $e');
       throw 'Could not launch WhatsApp';
     }
   }
@@ -74,18 +142,33 @@ class Helpers {
     String? subject,
     String? body,
   }) async {
+    if (!isValidEmail(email)) {
+      throw 'Invalid email address';
+    }
+
+    final Map<String, String> queryParams = {};
+    if (subject != null) queryParams['subject'] = subject;
+    if (body != null) queryParams['body'] = body;
+
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: email,
-      query: _encodeQueryParameters({
-        if (subject != null) 'subject': subject,
-        if (body != null) 'body': body,
-      }),
+      query: queryParams.isNotEmpty
+          ? _encodeQueryParameters(queryParams)
+          : null,
     );
 
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
+    debugPrint('sendEmail: Attempting to launch $emailUri');
+
+    try {
+      final launched = await launchUrl(emailUri);
+      if (!launched) {
+        debugPrint('sendEmail: launchUrl returned false');
+        throw 'Could not launch email client';
+      }
+      debugPrint('sendEmail: Successfully launched');
+    } catch (e) {
+      debugPrint('sendEmail: Error - $e');
       throw 'Could not launch email client';
     }
   }
@@ -94,9 +177,20 @@ class Helpers {
   static Future<void> openUrl(String url) async {
     final Uri uri = Uri.parse(url);
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    debugPrint('openUrl: Attempting to launch $uri');
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        debugPrint('openUrl: launchUrl returned false');
+        throw 'Could not launch $url';
+      }
+      debugPrint('openUrl: Successfully launched');
+    } catch (e) {
+      debugPrint('openUrl: Error - $e');
       throw 'Could not launch $url';
     }
   }

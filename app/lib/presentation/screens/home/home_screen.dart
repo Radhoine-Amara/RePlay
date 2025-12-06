@@ -1,11 +1,14 @@
 // FILE: lib/presentation/screens/home/home_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/item_model.dart';
-import '../../../data/datasources/item_service.dart';
-import '../../../data/datasources/auth_service.dart';
-import '../../../data/datasources/favorite_service.dart';
-import '../../../data/datasources/user_service.dart';
+import '../../../logic/item_cubit/item_cubit.dart';
+import '../../../logic/item_cubit/item_state.dart';
+import '../../../logic/favorite_cubit/favorite_cubit.dart';
+import '../../../logic/favorite_cubit/favorite_state.dart';
+import '../../../logic/auth_cubit/auth_cubit.dart';
+import '../../../logic/auth_cubit/auth_state.dart';
 import 'product_page_screen.dart';
 import '../item/add_listing_screen.dart';
 import '../profile_screen.dart';
@@ -21,19 +24,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ItemService _itemService = ItemService();
-  final AuthService _authService = AuthService();
-  final FavoriteService _favoriteService = FavoriteService();
-  final UserService _userService = UserService();
-
   int _currentIndex = 0;
   int _activeCategoryIndex = 0;
-
-  List<ItemModel> _allItems = [];
-  List<ItemModel> _displayedItems = [];
-  bool _isLoading = true;
-  int? _currentUserId;
-  Set<int> _favoritedItemIds = {};
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -48,8 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeUser();
-    _loadItems();
+    _loadData();
   }
 
   @override
@@ -58,139 +49,48 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _initializeUser() async {
-    try {
-      final authUser = _authService.getCurrentUser();
-      if (authUser != null) {
-        final dbUser = await _userService.getUserByEmail(authUser.email!);
-        if (dbUser != null) {
-          setState(() {
-            _currentUserId = dbUser.userId;
-          });
-          await _loadFavorites();
-        }
-      }
-    } catch (e) {
-      print('Error getting user ID: $e');
+  void _loadData() {
+    // Load items
+    context.read<ItemCubit>().loadAllItems();
+
+    // Load favorites if user is authenticated
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<FavoriteCubit>().loadFavorites(authState.user.userId!);
     }
   }
 
-  Future<void> _loadFavorites() async {
-    if (_currentUserId == null) return;
-    try {
-      final favorites = await _favoriteService.getUserFavorites(
-        _currentUserId!,
+  void _onCategoryChanged(int index) {
+    setState(() {
+      _activeCategoryIndex = index;
+      _searchController.clear();
+    });
+
+    if (index == 0) {
+      context.read<ItemCubit>().filterByCategory('all');
+    } else {
+      context.read<ItemCubit>().filterByCategory(_categories[index]);
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    context.read<ItemCubit>().searchItems(query);
+  }
+
+  void _toggleFavorite(int itemId) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<FavoriteCubit>().toggleFavorite(
+        authState.user.userId!,
+        itemId,
       );
-      setState(() {
-        _favoritedItemIds = favorites
-            .where((item) => item.itemId != null)
-            .map((item) => item.itemId!)
-            .toSet();
-      });
-    } catch (e) {
-      print('Error loading favorites: $e');
-    }
-  }
-
-  Future<void> _loadItems() async {
-    setState(() => _isLoading = true);
-
-    try {
-      _allItems = await _itemService.getAllItems();
-      _filterItems();
-    } catch (e) {
-      print('Error loading items: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading items: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void _filterItems() {
-    setState(() {
-      if (_activeCategoryIndex == 0) {
-        // "All" category (first in list)
-        _displayedItems = _allItems;
-      } else {
-        final category = _categories[_activeCategoryIndex];
-        _displayedItems = _allItems
-            .where(
-              (item) => item.category?.toLowerCase() == category.toLowerCase(),
-            )
-            .toList();
-      }
-
-      // Apply search filter if there's a query
-      if (_searchController.text.isNotEmpty) {
-        _searchItems(_searchController.text);
-      }
-    });
-  }
-
-  void _searchItems(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filterItems();
-      } else {
-        _displayedItems = _allItems
-            .where(
-              (item) =>
-                  item.title.toLowerCase().contains(query.toLowerCase()) ||
-                  (item.description?.toLowerCase().contains(
-                        query.toLowerCase(),
-                      ) ??
-                      false),
-            )
-            .toList();
-      }
-    });
-  }
-
-  Future<void> _toggleFavorite(int itemId) async {
-    if (_currentUserId == null) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please log in to add favorites'),
           backgroundColor: Colors.orange,
         ),
       );
-      return;
-    }
-
-    try {
-      final wasInFavorites = _favoritedItemIds.contains(itemId);
-      await _favoriteService.toggleFavorite(_currentUserId!, itemId);
-
-      setState(() {
-        if (wasInFavorites) {
-          _favoritedItemIds.remove(itemId);
-        } else {
-          _favoritedItemIds.add(itemId);
-        }
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              wasInFavorites ? 'Removed from favorites' : 'Added to favorites',
-            ),
-            duration: const Duration(seconds: 1),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error toggling favorite: $e');
     }
   }
 
@@ -210,11 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return AddListingScreen(
           onItemCreated: (newItem) {
-            // Add new item to list immediately
-            setState(() {
-              _allItems.insert(0, newItem);
-              _filterItems();
-            });
+            // Refresh items from cubit
+            context.read<ItemCubit>().refreshItems();
             // Switch back to home tab
             setState(() => _currentIndex = 0);
             // Show success message
@@ -237,25 +134,48 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHomeContent() {
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: _loadItems,
+        onRefresh: () async {
+          context.read<ItemCubit>().refreshItems();
+          final authState = context.read<AuthCubit>().state;
+          if (authState is AuthAuthenticated) {
+            context.read<FavoriteCubit>().loadFavorites(authState.user.userId!);
+          }
+        },
         color: const Color(0xFF9C4DFF),
         backgroundColor: Colors.black,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 10),
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildSearchField(),
-            const SizedBox(height: 20),
-            _buildCategoryRow(),
-            const SizedBox(height: 25),
-            _isLoading ? _buildLoadingGrid() : _buildItemsGrid(),
-            const SizedBox(height: 80),
-          ],
+        child: BlocBuilder<ItemCubit, ItemState>(
+          builder: (context, itemState) {
+            return ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                const SizedBox(height: 10),
+                _buildHeader(),
+                const SizedBox(height: 20),
+                _buildSearchField(),
+                const SizedBox(height: 20),
+                _buildCategoryRow(),
+                const SizedBox(height: 25),
+                _buildItemsContent(itemState),
+                const SizedBox(height: 80),
+              ],
+            );
+          },
         ),
       ),
     );
+  }
+
+  Widget _buildItemsContent(ItemState state) {
+    if (state is ItemLoading) {
+      return _buildLoadingGrid();
+    } else if (state is ItemLoaded) {
+      return _buildItemsGrid(state.filteredItems);
+    } else if (state is ItemError) {
+      return Center(
+        child: Text(state.message, style: const TextStyle(color: Colors.red)),
+      );
+    }
+    return _buildLoadingGrid();
   }
 
   Widget _buildHeader() {
@@ -291,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: TextField(
               controller: _searchController,
               style: const TextStyle(color: AppColors.textPrimary),
-              onChanged: _searchItems,
+              onChanged: _onSearchChanged,
               decoration: const InputDecoration(
                 hintText: "Search for games or accessories...",
                 hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
@@ -308,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onPressed: () {
                 _searchController.clear();
-                _searchItems('');
+                _onSearchChanged('');
               },
             ),
         ],
@@ -325,13 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           final isActive = _activeCategoryIndex == index;
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                _activeCategoryIndex = index;
-                _searchController.clear();
-              });
-              _filterItems();
-            },
+            onTap: () => _onCategoryChanged(index),
             child: Container(
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -384,8 +298,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildItemsGrid() {
-    if (_displayedItems.isEmpty) {
+  Widget _buildItemsGrid(List<ItemModel> items) {
+    if (items.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(40),
@@ -415,14 +329,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _displayedItems.length,
+      itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 20,
         crossAxisSpacing: 20,
         childAspectRatio: 0.72,
       ),
-      itemBuilder: (ctx, i) => _buildItemCard(_displayedItems[i]),
+      itemBuilder: (ctx, i) => _buildItemCard(items[i]),
     );
   }
 
@@ -432,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => Productpage(item: item)),
-        ).then((_) => _loadItems());
+        ).then((_) => context.read<ItemCubit>().refreshItems());
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -562,7 +476,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool _isOwner(ItemModel item) {
-    return _currentUserId != null && _currentUserId == item.userId;
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      return authState.user.userId == item.userId;
+    }
+    return false;
   }
 
   Widget _buildEditButton(ItemModel item) {
@@ -574,15 +492,8 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (_) => EditItemScreen(
               item: item,
               onItemUpdated: (updated) {
-                final idx = _allItems.indexWhere(
-                  (it) => it.itemId == updated.itemId,
-                );
-                if (idx != -1) {
-                  setState(() {
-                    _allItems[idx] = updated;
-                    _filterItems();
-                  });
-                }
+                // Refresh items via cubit
+                context.read<ItemCubit>().refreshItems();
               },
             ),
           ),
@@ -590,8 +501,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Always reload items from database after editing
         if (mounted) {
-          await _loadItems();
-          await _loadFavorites();
+          context.read<ItemCubit>().refreshItems();
+          final authState = context.read<AuthCubit>().state;
+          if (authState is AuthAuthenticated) {
+            context.read<FavoriteCubit>().loadFavorites(authState.user.userId!);
+          }
         }
       },
       child: Container(
@@ -662,21 +576,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFavoriteButton(int itemId) {
-    final isFavorited = _favoritedItemIds.contains(itemId);
-    return GestureDetector(
-      onTap: () => _toggleFavorite(itemId),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          isFavorited ? Icons.favorite : Icons.favorite_border,
-          color: isFavorited ? Colors.red : Colors.white,
-          size: 18,
-        ),
-      ),
+    return BlocBuilder<FavoriteCubit, FavoriteState>(
+      builder: (context, state) {
+        final isFavorited =
+            state is FavoriteLoaded && state.favoriteIds.contains(itemId);
+        return GestureDetector(
+          onTap: () => _toggleFavorite(itemId),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isFavorited ? Icons.favorite : Icons.favorite_border,
+              color: isFavorited ? Colors.red : Colors.white,
+              size: 18,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -692,8 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _currentIndex = index);
           // Refresh data when Home tab is tapped
           if (index == 0) {
-            _loadItems();
-            _loadFavorites();
+            _loadData();
           }
         },
         backgroundColor: Colors.transparent,

@@ -1,11 +1,14 @@
 // FILE: lib/presentation/screens/profile_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/item_model.dart';
-import '../../data/datasources/item_service.dart';
-import '../../data/datasources/auth_service.dart';
-import '../../data/datasources/user_service.dart';
-import '../../data/datasources/favorite_service.dart';
+import '../../logic/profile_cubit/profile_cubit.dart';
+import '../../logic/profile_cubit/profile_state.dart';
+import '../../logic/item_cubit/item_cubit.dart';
+import '../../logic/favorite_cubit/favorite_cubit.dart';
+import '../../logic/auth_cubit/auth_cubit.dart';
+import '../../logic/auth_cubit/auth_state.dart';
 import '../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
 import 'home/product_page_screen.dart';
@@ -22,16 +25,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  final ItemService _itemService = ItemService();
-  final AuthService _authService = AuthService();
-  final UserService _userService = UserService();
-  final FavoriteService _favoriteService = FavoriteService();
-
   late TabController _tabController;
-  UserModel? _currentUser;
-  List<ItemModel> _myListings = [];
-  List<ItemModel> _myFavorites = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -46,79 +40,68 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
-  Future<void> _loadUserData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final authUser = _authService.getCurrentUser();
-      print('Auth user: ${authUser?.email}'); // Debug
-
-      if (authUser != null && authUser.email != null) {
-        // Get database user
-        final dbUser = await _userService.getUserByEmail(authUser.email!);
-        print('DB user: ${dbUser?.userId}, ${dbUser?.userName}'); // Debug
-
-        if (dbUser != null && dbUser.userId != null) {
-          setState(() => _currentUser = dbUser);
-
-          // Load user's listings
-          final myItems = await _itemService.getItemsByUser(dbUser.userId!);
-          print('My items count: ${myItems.length}'); // Debug
-
-          // Load user's favorites
-          final favorites = await _favoriteService.getUserFavorites(
-            dbUser.userId!,
-          );
-          print('Favorites count: ${favorites.length}'); // Debug
-
-          setState(() {
-            _myListings = myItems;
-            _myFavorites = favorites;
-          });
-        } else {
-          print('DB user not found for email: ${authUser.email}');
-        }
-      } else {
-        print('No authenticated user found');
-      }
-    } catch (e) {
-      print('Error loading profile data: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  void _loadUserData() {
+    context.read<ProfileCubit>().loadProfile();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-      );
-    }
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      builder: (context, state) {
+        if (state is ProfileLoading) {
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildTabBar(),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [_buildMyListings(), _buildFavorites()],
+        if (state is ProfileError) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
               ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        final user = state is ProfileLoaded ? state.user : null;
+        final myListings = state is ProfileLoaded
+            ? state.myListings
+            : <ItemModel>[];
+        final myFavorites = state is ProfileLoaded
+            ? state.myFavorites
+            : <ItemModel>[];
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(user),
+                _buildTabBar(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildMyListings(myListings),
+                      _buildFavorites(myFavorites),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(UserModel? user) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -135,10 +118,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   color: AppColors.primary,
                   border: Border.all(color: AppColors.primary, width: 3),
                 ),
-                child: _currentUser?.imageUrl != null
+                child: user?.imageUrl != null
                     ? ClipOval(
                         child: Image.network(
-                          _currentUser!.imageUrl!,
+                          user!.imageUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
@@ -173,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(height: 16),
           // Username
           Text(
-            _currentUser?.userName ?? AppStrings.guest,
+            user?.userName ?? AppStrings.guest,
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 24,
@@ -234,8 +217,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildMyListings() {
-    if (_myListings.isEmpty) {
+  Widget _buildMyListings(List<ItemModel> myListings) {
+    if (myListings.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -265,24 +248,26 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: _loadUserData,
+      onRefresh: () async {
+        _loadUserData();
+      },
       color: const Color(0xFF9C4DFF),
       child: GridView.builder(
         padding: const EdgeInsets.all(20),
-        itemCount: _myListings.length,
+        itemCount: myListings.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           mainAxisSpacing: 20,
           crossAxisSpacing: 20,
           childAspectRatio: 0.72,
         ),
-        itemBuilder: (ctx, i) => _buildMyListingCard(_myListings[i]),
+        itemBuilder: (ctx, i) => _buildMyListingCard(myListings[i]),
       ),
     );
   }
 
-  Widget _buildFavorites() {
-    if (_myFavorites.isEmpty) {
+  Widget _buildFavorites(List<ItemModel> myFavorites) {
+    if (myFavorites.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -308,29 +293,33 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: _loadUserData,
+      onRefresh: () async {
+        _loadUserData();
+      },
       color: const Color(0xFF9C4DFF),
       child: GridView.builder(
         padding: const EdgeInsets.all(20),
-        itemCount: _myFavorites.length,
+        itemCount: myFavorites.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           mainAxisSpacing: 20,
           crossAxisSpacing: 20,
           childAspectRatio: 0.72,
         ),
-        itemBuilder: (ctx, i) => _buildFavoriteItemCard(_myFavorites[i]),
+        itemBuilder: (ctx, i) => _buildFavoriteItemCard(myFavorites[i]),
       ),
     );
   }
 
-  Future<void> _toggleFavorite(int itemId) async {
-    if (_currentUser?.userId == null) return;
-
-    try {
-      await _favoriteService.toggleFavorite(_currentUser!.userId!, itemId);
-      // Reload favorites after toggling
-      await _loadUserData();
+  void _toggleFavorite(int itemId) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<FavoriteCubit>().toggleFavorite(
+        authState.user.userId!,
+        itemId,
+      );
+      // Reload profile to update favorites list
+      _loadUserData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -340,61 +329,74 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         );
       }
-    } catch (e) {
-      print('Error toggling favorite: $e');
     }
   }
 
   Widget _buildMyListingCard(ItemModel item) {
     return GestureDetector(
       onTap: () => _showListingOptions(item),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildItemImage(item),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    _buildPriceTag(item),
-                    const Spacer(),
-                    Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate image height based on available space (about 55% of card)
+          final imageHeight = constraints.maxHeight * 0.55;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: imageHeight,
+                  child: _buildItemImageContent(item),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildTypeBadge(item.type ?? AppStrings.sell),
+                        Text(
+                          item.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        _buildPriceTag(item),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildEditButton(item),
-                            const SizedBox(width: 4),
-                            _buildDeleteButton(item),
+                            Flexible(
+                              child: _buildTypeBadge(
+                                item.type ?? AppStrings.sell,
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildEditButton(item),
+                                const SizedBox(width: 4),
+                                _buildDeleteButton(item),
+                              ],
+                            ),
                           ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -498,15 +500,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         builder: (_) => EditItemScreen(
           item: item,
           onItemUpdated: (updatedItem) {
-            // This callback updates local state immediately
-            final index = _myListings.indexWhere(
-              (i) => i.itemId == updatedItem.itemId,
-            );
-            if (index != -1) {
-              setState(() {
-                _myListings[index] = updatedItem;
-              });
-            }
+            // Reload profile to get updated data
+            _loadUserData();
           },
         ),
       ),
@@ -514,7 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Always reload from database to ensure we have fresh data
     if (mounted) {
-      await _loadUserData();
+      _loadUserData();
     }
   }
 
@@ -547,11 +542,12 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (confirmed == true && item.itemId != null) {
       try {
-        final success = await _itemService.deleteItem(item.itemId!);
+        final success = await context.read<ItemCubit>().deleteItem(
+          item.itemId!,
+        );
         if (success) {
-          setState(() {
-            _myListings.removeWhere((i) => i.itemId == item.itemId);
-          });
+          // Reload profile data
+          _loadUserData();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -623,47 +619,61 @@ class _ProfileScreenState extends State<ProfileScreen>
           MaterialPageRoute(builder: (_) => Productpage(item: item)),
         ).then((_) => _loadUserData());
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildItemImage(item),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    _buildPriceTag(item),
-                    const Spacer(),
-                    Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate image height based on available space (about 55% of card)
+          final imageHeight = constraints.maxHeight * 0.55;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: imageHeight,
+                  child: _buildItemImageContent(item),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildTypeBadge(item.type ?? AppStrings.sell),
-                        _buildUnfavoriteButton(item.itemId!),
+                        Text(
+                          item.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        _buildPriceTag(item),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: _buildTypeBadge(
+                                item.type ?? AppStrings.sell,
+                              ),
+                            ),
+                            _buildUnfavoriteButton(item.itemId!),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -682,49 +692,60 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildItemImage(ItemModel item) {
+  /// Builds the image content for item cards (used inside SizedBox with dynamic height)
+  Widget _buildItemImageContent(ItemModel item) {
     return Stack(
       children: [
-        Container(
-          height: 140,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            color: Colors.grey[800],
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            child: Image.network(
-              item.imageUrl ?? 'https://via.placeholder.com/300',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Icon(
-                    Icons.broken_image,
-                    size: 40,
-                    color: Colors.grey[600],
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        if (!item.status)
-          Container(
-            height: 140,
+        // Image container
+        Positioned.fill(
+          child: Container(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(18),
               ),
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.grey[800],
             ),
-            child: const Center(
-              child: Text(
-                'UNAVAILABLE',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(18),
+              ),
+              child: Image.network(
+                item.imageUrl ?? 'https://via.placeholder.com/300',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 40,
+                      color: Colors.grey[600],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        // Unavailable overlay
+        if (!item.status)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(18),
+                ),
+                color: Colors.black.withOpacity(0.7),
+              ),
+              child: const Center(
+                child: Text(
+                  'UNAVAILABLE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -734,58 +755,59 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildPriceTag(ItemModel item) {
-  String priceText;
-  final type = item.type?.toLowerCase() ?? 'sell';
-  
-  if (type == 'rent') {
-    priceText = '\$${item.price ?? 0}/day'; // or ${AppStrings.rent.toLowerCase()}
-  } else if (type == 'trade') {
-    priceText = AppStrings.trade;
-  } else {
-    priceText = '\$${item.price ?? 0}';
+    String priceText;
+    final type = item.type?.toLowerCase() ?? 'sell';
+
+    if (type == 'rent') {
+      priceText =
+          '\$${item.price ?? 0}/day'; // or ${AppStrings.rent.toLowerCase()}
+    } else if (type == 'trade') {
+      priceText = AppStrings.trade;
+    } else {
+      priceText = '\$${item.price ?? 0}';
+    }
+    return Text(
+      priceText,
+      style: const TextStyle(
+        color: AppColors.primary,
+        fontWeight: FontWeight.bold,
+        fontSize: 16,
+      ),
+    );
   }
-  return Text(
-    priceText,
-    style: const TextStyle(
-      color: AppColors.primary,
-      fontWeight: FontWeight.bold,
-      fontSize: 16,
-    ),
-  );
-}
 
   Widget _buildTypeBadge(String type) {
-  Color color;
-  String label;
-  
-  // Convert to lowercase for consistent comparison
-  final typeLower = type.toLowerCase();
-  
-  if (typeLower == 'rent') {
-    color = AppColors.info;
-    label = AppStrings.rent; // This displays as "Rent"
-  } else if (typeLower == 'trade') {
-    color = AppColors.primaryLight;
-    label = AppStrings.trade; // This displays as "Trade"
-  } else {
-    color = AppColors.success;
-    label = AppStrings.sell; // This displays as "Sell"
-  }
-  
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.bold,
-        fontSize: 11,
+    Color color;
+    String label;
+
+    // Convert to lowercase for consistent comparison
+    final typeLower = type.toLowerCase();
+
+    if (typeLower == 'rent') {
+      color = AppColors.info;
+      label = AppStrings.rent; // This displays as "Rent"
+    } else if (typeLower == 'trade') {
+      color = AppColors.primaryLight;
+      label = AppStrings.trade; // This displays as "Trade"
+    } else {
+      color = AppColors.success;
+      label = AppStrings.sell; // This displays as "Sell"
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
       ),
-    ),
-  );
-}
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
 }

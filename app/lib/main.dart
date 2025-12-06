@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Cubits
+import 'logic/auth_cubit/auth_cubit.dart';
+import 'logic/profile_cubit/profile_cubit.dart';
+import 'logic/item_cubit/item_cubit.dart';
+import 'logic/favorite_cubit/favorite_cubit.dart';
+
+// Screens
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
-// ignore: unused_import
-import 'presentation/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,12 +35,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Marketplace App',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: initialSession != null
-          ? const HomeScreen() // User is logged in
-          : const LoginScreen(), // User needs to log in
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(create: (_) => AuthCubit()..checkAuthStatus()),
+        BlocProvider<ProfileCubit>(create: (_) => ProfileCubit()),
+        BlocProvider<ItemCubit>(create: (_) => ItemCubit()..loadAllItems()),
+        BlocProvider<FavoriteCubit>(create: (_) => FavoriteCubit()),
+      ],
+      child: MaterialApp(
+        title: 'RePlay',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+        home: initialSession != null ? const HomeScreen() : const LoginScreen(),
+      ),
     );
   }
 }

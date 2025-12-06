@@ -803,7 +803,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
         'category': _selectedCategory,
         'type': _selectedListingType.toLowerCase(),
         'price': int.tryParse(_priceController.text.trim()),
-        'image_url': finalImageUrl,
+        'imageurl': finalImageUrl,
       };
 
       // Remove nulls to avoid overwriting (except image_url which can be null to delete)

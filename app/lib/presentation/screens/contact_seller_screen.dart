@@ -48,33 +48,75 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
     }
   }
 
-  void _handlePhoneCall() {
-    if (_seller?.phoneNum != null) {
-      Helpers.makePhoneCall(_seller!.phoneNum.toString());
-    } else {
+  Future<void> _handlePhoneCall() async {
+    final phoneNumber = _seller?.phoneNum?.toString();
+
+    if (phoneNumber == null || phoneNumber.isEmpty) {
       Helpers.showErrorSnackbar(context, 'Phone number not available');
+      return;
+    }
+
+    if (!Helpers.isValidPhoneNumber(phoneNumber)) {
+      Helpers.showErrorSnackbar(context, 'Invalid phone number');
+      return;
+    }
+
+    try {
+      await Helpers.makePhoneCall(phoneNumber);
+    } catch (e) {
+      if (mounted) {
+        Helpers.showErrorSnackbar(context, 'Could not open phone dialer');
+      }
     }
   }
 
-  void _handleEmail() {
-    if (_seller?.email != null && _seller!.email.isNotEmpty) {
-      Helpers.sendEmail(_seller!.email, subject: 'Inquiry from RePlay App');
-    } else {
+  Future<void> _handleEmail() async {
+    final email = _seller?.email;
+
+    if (email == null || email.isEmpty) {
       Helpers.showErrorSnackbar(context, 'Email not available');
+      return;
+    }
+
+    if (!Helpers.isValidEmail(email)) {
+      Helpers.showErrorSnackbar(context, 'Invalid email address');
+      return;
+    }
+
+    try {
+      await Helpers.sendEmail(email, subject: 'Inquiry from RePlay App');
+    } catch (e) {
+      if (mounted) {
+        Helpers.showErrorSnackbar(context, 'Could not open email client');
+      }
     }
   }
 
-  void _handleWhatsApp() {
-    if (_seller?.phoneNum != null) {
-      Helpers.openWhatsApp(
-        _seller!.phoneNum.toString(),
-        'Hi! I found your listing on RePlay and I\'m interested.',
-      );
-    } else {
+  Future<void> _handleWhatsApp() async {
+    final phoneNumber = _seller?.phoneNum?.toString();
+
+    if (phoneNumber == null || phoneNumber.isEmpty) {
       Helpers.showErrorSnackbar(
         context,
         'Phone number not available for WhatsApp',
       );
+      return;
+    }
+
+    if (!Helpers.isValidPhoneNumber(phoneNumber)) {
+      Helpers.showErrorSnackbar(context, 'Invalid phone number');
+      return;
+    }
+
+    try {
+      await Helpers.openWhatsApp(
+        phoneNumber,
+        'Hi! I found your listing on RePlay and I\'m interested.',
+      );
+    } catch (e) {
+      if (mounted) {
+        Helpers.showErrorSnackbar(context, 'Could not open WhatsApp');
+      }
     }
   }
 
