@@ -426,79 +426,140 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-// Replace the _buildItemCard method in your home_screen.dart with this:
+  Widget _buildItemCard(ItemModel item) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => Productpage(item: item)),
+        ).then((_) => _loadItems());
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate image height based on available space (about 55% of card)
+          final imageHeight = constraints.maxHeight * 0.55;
 
-Widget _buildItemCard(ItemModel item) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => Productpage(item: item)),
-      ).then((_) => _loadItems());
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildItemImage(item),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title with ellipsis - FIXED
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image section with dynamic height
+                SizedBox(
+                  height: imageHeight,
+                  child: _buildItemImageContent(item),
+                ),
+                // Content section takes remaining space
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Title
+                        Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        // Price
+                        _buildPriceTag(item),
+                        // Bottom row with badge and buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: _buildTypeBadge(
+                                item.type ?? AppStrings.sell,
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildFavoriteButton(item.itemId!),
+                                if (_isOwner(item)) ...[
+                                  const SizedBox(width: 6),
+                                  _buildEditButton(item),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  // Price
-                  _buildPriceTag(item),
-                  const Spacer(),
-                  // Bottom row with badge and buttons - FIXED
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Type badge - flexible to shrink if needed
-                      Flexible(
-                        child: _buildTypeBadge(item.type ?? AppStrings.sell),
-                      ),
-                      const SizedBox(width: 8),
-                      // Buttons row - fixed size
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildFavoriteButton(item.itemId!),
-                          if (_isOwner(item)) ...[
-                            const SizedBox(width: 8),
-                            _buildEditButton(item),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildItemImageContent(ItemModel item) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          item.imageUrl ?? 'https://via.placeholder.com/300',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[800],
+              child: Center(
+                child: Icon(
+                  Icons.broken_image,
+                  size: 40,
+                  color: Colors.grey[600],
+                ),
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: Colors.grey[800],
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: const Color(0xFF9C4DFF),
+                ),
+              ),
+            );
+          },
+        ),
+        if (!item.status)
+          Container(
+            color: Colors.black.withOpacity(0.7),
+            child: const Center(
+              child: Text(
+                'UNAVAILABLE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                ),
               ),
             ),
           ),
-        ],
-      ),
-    ),
-  );
-}
+      ],
+    );
+  }
 
   bool _isOwner(ItemModel item) {
     return _currentUserId != null && _currentUserId == item.userId;
@@ -544,70 +605,6 @@ Widget _buildItemCard(ItemModel item) {
     );
   }
 
-  Widget _buildItemImage(ItemModel item) {
-    return Stack(
-      children: [
-        Container(
-          height: 140,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            color: Colors.grey[800],
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            child: Image.network(
-              item.imageUrl ?? 'https://via.placeholder.com/300',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Icon(
-                    Icons.broken_image,
-                    size: 40,
-                    color: Colors.grey[600],
-                  ),
-                );
-              },
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                        : null,
-                    color: const Color(0xFF9C4DFF),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        if (!item.status)
-          Container(
-            height: 140,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(18),
-              ),
-              color: Colors.black.withOpacity(0.7),
-            ),
-            child: const Center(
-              child: Text(
-                'UNAVAILABLE',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _buildPriceTag(ItemModel item) {
     String priceText;
     if (item.type == 'rent') {
@@ -623,45 +620,46 @@ Widget _buildItemCard(ItemModel item) {
       style: const TextStyle(
         color: Color(0xFF9C4DFF),
         fontWeight: FontWeight.bold,
-        fontSize: 16,
+        fontSize: 14,
       ),
     );
   }
 
   Widget _buildTypeBadge(String type) {
-  Color color;
-  String label;
-  
-  // Convert to lowercase for consistent comparison
-  final typeLower = type.toLowerCase();
-  
-  if (typeLower == 'rent' || typeLower == AppStrings.rent.toLowerCase()) {
-    color = AppColors.info;
-    label = AppStrings.rent; // Display as "Rent"
-  } else if (typeLower == 'trade' || typeLower == AppStrings.trade.toLowerCase()) {
-    color = AppColors.primaryLight;
-    label = AppStrings.trade; // Display as "Trade"
-  } else {
-    color = AppColors.success;
-    label = AppStrings.sell; // Display as "Sell"
-  }
-  
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.bold,
-        fontSize: 11,
+    Color color;
+    String label;
+
+    // Convert to lowercase for consistent comparison
+    final typeLower = type.toLowerCase();
+
+    if (typeLower == 'rent' || typeLower == AppStrings.rent.toLowerCase()) {
+      color = AppColors.info;
+      label = AppStrings.rent; // Display as "Rent"
+    } else if (typeLower == 'trade' ||
+        typeLower == AppStrings.trade.toLowerCase()) {
+      color = AppColors.primaryLight;
+      label = AppStrings.trade; // Display as "Trade"
+    } else {
+      color = AppColors.success;
+      label = AppStrings.sell; // Display as "Sell"
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
       ),
-    ),
-  );
-}
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
 
   Widget _buildFavoriteButton(int itemId) {
     final isFavorited = _favoritedItemIds.contains(itemId);
