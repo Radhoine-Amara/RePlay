@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
+// ignore: unused_import
 import 'presentation/screens/splash_screen.dart';
 
 void main() async {

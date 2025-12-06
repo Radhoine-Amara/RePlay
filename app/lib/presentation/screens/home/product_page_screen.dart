@@ -4,6 +4,7 @@ import '../home/home_screen.dart';
 import '../profile_screen.dart';
 import '../item/add_listing_screen.dart';
 import '../../../data/models/item_model.dart';
+// ignore: unused_import
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
@@ -174,6 +175,7 @@ class _ProductpageState extends State<Productpage> {
               color: AppColors.background,
               boxShadow: [
                 BoxShadow(
+                  // ignore: deprecated_member_use
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
@@ -191,7 +193,7 @@ class _ProductpageState extends State<Productpage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ContactSellerScreen(
-                          sellerId: widget.item.userId!,
+                          sellerId: widget.item.userId,
                         ),
                       ),
                     );
