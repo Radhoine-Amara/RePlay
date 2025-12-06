@@ -426,64 +426,79 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildItemCard(ItemModel item) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => Productpage(item: item)),
-        ).then((_) => _loadItems());
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildItemImage(item),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
+// Replace the _buildItemCard method in your home_screen.dart with this:
+
+Widget _buildItemCard(ItemModel item) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => Productpage(item: item)),
+      ).then((_) => _loadItems());
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildItemImage(item),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title with ellipsis - FIXED
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Price
+                  _buildPriceTag(item),
+                  const Spacer(),
+                  // Bottom row with badge and buttons - FIXED
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Type badge - flexible to shrink if needed
+                      Flexible(
+                        child: _buildTypeBadge(item.type ?? AppStrings.sell),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    _buildPriceTag(item),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildTypeBadge(item.type ?? AppStrings.sell),
-                        Row(
-                          children: [
-                            _buildFavoriteButton(item.itemId!),
+                      const SizedBox(width: 8),
+                      // Buttons row - fixed size
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildFavoriteButton(item.itemId!),
+                          if (_isOwner(item)) ...[
                             const SizedBox(width: 8),
-                            if (_isOwner(item)) _buildEditButton(item),
+                            _buildEditButton(item),
                           ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   bool _isOwner(ItemModel item) {
     return _currentUserId != null && _currentUserId == item.userId;
