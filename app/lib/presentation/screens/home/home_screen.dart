@@ -228,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         );
       case 2:
-        return const ProfileScreen(); // This now shows the profile view with tabs
+        return const ProfileScreen();
       default:
         return _buildHomeContent();
     }
@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisCount: 2,
         mainAxisSpacing: 20,
         crossAxisSpacing: 20,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.68,
       ),
       itemBuilder: (ctx, i) => Container(
         decoration: BoxDecoration(
@@ -420,85 +420,83 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisCount: 2,
         mainAxisSpacing: 20,
         crossAxisSpacing: 20,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.68,
       ),
       itemBuilder: (ctx, i) => _buildItemCard(_displayedItems[i]),
     );
   }
 
-// Replace the _buildItemCard method in your home_screen.dart with this:
-
-Widget _buildItemCard(ItemModel item) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => Productpage(item: item)),
-      ).then((_) => _loadItems());
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildItemImage(item),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title with ellipsis - FIXED
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
+  Widget _buildItemCard(ItemModel item) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => Productpage(item: item)),
+        ).then((_) => _loadItems());
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildItemImage(item),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title with ellipsis
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Price
-                  _buildPriceTag(item),
-                  const Spacer(),
-                  // Bottom row with badge and buttons - FIXED
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Type badge - flexible to shrink if needed
-                      Flexible(
-                        child: _buildTypeBadge(item.type ?? AppStrings.sell),
-                      ),
-                      const SizedBox(width: 8),
-                      // Buttons row - fixed size
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildFavoriteButton(item.itemId!),
-                          if (_isOwner(item)) ...[
-                            const SizedBox(width: 8),
-                            _buildEditButton(item),
+                    const SizedBox(height: 4),
+                    // Price
+                    _buildPriceTag(item),
+                    const Spacer(),
+                    // Bottom row with badge and buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Type badge - flexible to shrink if needed
+                        Flexible(
+                          child: _buildTypeBadge(item.type ?? AppStrings.sell),
+                        ),
+                        const SizedBox(width: 4),
+                        // Buttons row - fixed size
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildFavoriteButton(item.itemId!),
+                            if (_isOwner(item)) ...[
+                              const SizedBox(width: 4),
+                              _buildEditButton(item),
+                            ],
                           ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   bool _isOwner(ItemModel item) {
     return _currentUserId != null && _currentUserId == item.userId;
@@ -629,39 +627,39 @@ Widget _buildItemCard(ItemModel item) {
   }
 
   Widget _buildTypeBadge(String type) {
-  Color color;
-  String label;
-  
-  // Convert to lowercase for consistent comparison
-  final typeLower = type.toLowerCase();
-  
-  if (typeLower == 'rent' || typeLower == AppStrings.rent.toLowerCase()) {
-    color = AppColors.info;
-    label = AppStrings.rent; // Display as "Rent"
-  } else if (typeLower == 'trade' || typeLower == AppStrings.trade.toLowerCase()) {
-    color = AppColors.primaryLight;
-    label = AppStrings.trade; // Display as "Trade"
-  } else {
-    color = AppColors.success;
-    label = AppStrings.sell; // Display as "Sell"
-  }
-  
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.bold,
-        fontSize: 11,
+    Color color;
+    String label;
+    
+    // Convert to lowercase for consistent comparison
+    final typeLower = type.toLowerCase();
+    
+    if (typeLower == 'rent' || typeLower == AppStrings.rent.toLowerCase()) {
+      color = AppColors.info;
+      label = AppStrings.rent;
+    } else if (typeLower == 'trade' || typeLower == AppStrings.trade.toLowerCase()) {
+      color = AppColors.primaryLight;
+      label = AppStrings.trade;
+    } else {
+      color = AppColors.success;
+      label = AppStrings.sell;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
       ),
-    ),
-  );
-}
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
 
   Widget _buildFavoriteButton(int itemId) {
     final isFavorited = _favoritedItemIds.contains(itemId);
