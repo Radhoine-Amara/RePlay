@@ -22,8 +22,8 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  // Check if a session exists
-  final session = Supabase.instance.client.auth.currentSession;
+    // Check if a session exists
+    final session = Supabase.instance.client.auth.currentSession;
 
   runApp(MyApp(initialSession: session));
 }

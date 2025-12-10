@@ -362,7 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       children: [
                         Text(
                           item.title,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -646,7 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       children: [
                         Text(
                           item.title,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
