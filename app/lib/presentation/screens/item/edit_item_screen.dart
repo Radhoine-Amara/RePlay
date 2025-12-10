@@ -353,6 +353,10 @@ class _EditItemScreenState extends State<EditItemScreen> {
                           value: 'Accessories',
                           child: Text('Accessories'),
                         ),
+                        DropdownMenuItem(
+                          value: 'Electronics',
+                          child: Text('Electronics'),
+                        ),
                         DropdownMenuItem(value: 'Other', child: Text('Other')),
                       ],
                       onChanged: (String? newValue) {
