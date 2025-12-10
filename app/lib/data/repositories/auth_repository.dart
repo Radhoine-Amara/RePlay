@@ -51,10 +51,20 @@ class AuthRepository {
   }
 
   /// Get the database user model for the current auth user.
-  Future<UserModel?> getCurrentUserModel() async {
-    final authUser = _authService.getCurrentUser();
-    if (authUser == null || authUser.email == null) return null;
-    return await _userService.getUserByEmail(authUser.email!);
+  /// Optionally pass email as fallback if currentUser is not yet available.
+  Future<UserModel?> getCurrentUserModel({String? emailFallback}) async {
+    // Try to get email from multiple sources
+    String? email = _authService.getCurrentUserEmail();
+    email = email ?? emailFallback;
+    
+    if (email == null) return null;
+    
+    return await _userService.getUserByEmail(email);
+  }
+  
+  /// Get user by email directly (useful when currentUser is not available)
+  Future<UserModel?> getUserByEmail(String email) async {
+    return await _userService.getUserByEmail(email);
   }
 
   /// Check if a user is currently signed in.

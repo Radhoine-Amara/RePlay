@@ -733,7 +733,16 @@ class _AddListingScreenState extends State<AddListingScreen> {
     try {
       // Get current user ID from auth
       final authUser = _authService.getCurrentUser();
-      if (authUser == null || authUser.email == null) {
+      
+      // Try to get user email from multiple sources
+      String? email;
+      if (authUser != null && authUser.email != null && authUser.email!.isNotEmpty) {
+        email = authUser.email;
+      } else if (authUser?.userMetadata?['email'] != null) {
+        email = authUser!.userMetadata!['email'] as String;
+      }
+      
+      if (email == null) {
         _showSnackbar(
           'You must be logged in to create a listing',
           isError: true,
@@ -741,11 +750,15 @@ class _AddListingScreenState extends State<AddListingScreen> {
         setState(() => _isSubmitting = false);
         return;
       }
-
-      // Get the database user ID from the users table by email
-      final dbUser = await _userService.getUserByEmail(authUser.email!);
+      
+      // Try to get user from database using email
+      final dbUser = await _userService.getUserByEmail(email);
+      
       if (dbUser == null || dbUser.userId == null) {
-        _showSnackbar('User not found in database', isError: true);
+        _showSnackbar(
+          'User profile not found. Please log out and log in again.',
+          isError: true,
+        );
         setState(() => _isSubmitting = false);
         return;
       }

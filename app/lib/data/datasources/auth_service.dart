@@ -17,32 +17,55 @@ class AuthService {
     int? phoneNum,
     String? imageUrl,
   }) async {
+    final normalizedEmail = email.toLowerCase().trim();
     try {
-      // 1. Create auth user
+      // 1. Create auth user first
       final authResponse = await _supabase.auth.signUp(
-        email: email,
+        email: normalizedEmail,
         password: password,
       );
 
-      if (authResponse.user != null) {
-        // 2. Create user record in database
+      if (authResponse.user == null) {
+        throw Exception('Failed to create authentication user');
+      }
+      
+      final authUser = authResponse.user!;
+
+      // 2. Create user record in database
+      try {
         final userModel = UserModel(
           userName: userName,
-          email: email.toLowerCase().trim(),
+          email: normalizedEmail,
           phoneNum: phoneNum,
-          password: password, // In production, don't store plain passwords!
+          password: password,
           imageUrl: imageUrl,
         );
 
         final createdUser = await _userService.createUser(userModel);
         if (createdUser == null) {
-          throw Exception('Failed to create user profile in database');
+          throw Exception('Database returned null when creating user');
         }
         
-        return authResponse.user;
+        // 3. Auto-login the user after registration
+        try {
+          final loginResponse = await _supabase.auth.signInWithPassword(
+            email: normalizedEmail,
+            password: password,
+          );
+          if (loginResponse.user != null) {
+            return loginResponse.user;
+          }
+        } catch (loginError) {
+          print('Warning: Auto-login failed after signup: $loginError');
+          // Even if auto-login fails, return the created auth user
+          return authUser;
+        }
+        
+        return authUser;
+      } catch (dbError) {
+        print('Warning: Database user creation failed after auth signup: $dbError');
+        throw Exception('Failed to create user profile: ${dbError.toString()}');
       }
-      
-      throw Exception('Failed to create authentication user');
     } catch (e) {
       print('Error signing up: $e');
       rethrow;
@@ -77,6 +100,25 @@ class AuthService {
   // Get Current User
   User? getCurrentUser() {
     return _supabase.auth.currentUser;
+  }
+
+  // Get Current User's Email (tries multiple sources)
+  String? getCurrentUserEmail() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return null;
+    
+    // Try email first
+    if (user.email != null && user.email!.isNotEmpty) {
+      return user.email;
+    }
+    
+    // Try user metadata
+    if (user.userMetadata != null && user.userMetadata!['email'] != null) {
+      return user.userMetadata!['email'] as String;
+    }
+    
+    // Try from user id (last resort - not reliable)
+    return null;
   }
 
   // Check if user is signed in

@@ -7,16 +7,29 @@ class UserService {
   // CREATE - Add new user
   Future<UserModel?> createUser(UserModel user) async {
     try {
+      print('Creating user with data: ${user.toJson()}');
+      
       final response = await _supabase
           .from('users')
           .insert(user.toJson())
-          .select()
-          .single();
+          .select();
 
-      return UserModel.fromJson(response);
+      if (response.isEmpty) {
+        throw Exception('No response from database after insert');
+      }
+
+      print('User created successfully with response: ${response.first}');
+      return UserModel.fromJson(response.first as Map<String, dynamic>);
     } catch (e) {
       print('Error creating user: $e');
-      throw Exception('Database error: Unable to create user account. ${e.toString()}');
+      print('Error type: ${e.runtimeType}');
+      if (e.toString().contains('duplicate key') || e.toString().contains('unique')) {
+        throw Exception('Email already registered. Please try a different email.');
+      } else if (e.toString().contains('not') && e.toString().contains('insert')) {
+        throw Exception('You do not have permission to create an account. Please contact support.');
+      } else {
+        throw Exception('Unable to create account: ${e.toString()}');
+      }
     }
   }
 

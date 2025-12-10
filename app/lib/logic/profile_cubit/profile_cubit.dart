@@ -33,7 +33,8 @@ class ProfileCubit extends Cubit<ProfileState> {
       final userModel = await _authRepository.getCurrentUserModel();
 
       if (userModel == null || userModel.userId == null) {
-        emit(const ProfileError('User not found'));
+        print('Error: Could not load user profile. User model is null.');
+        emit(const ProfileError('User profile not found. Please log out and log in again.'));
         return;
       }
 

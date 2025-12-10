@@ -66,8 +66,9 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthLoading());
 
     try {
+      final normalizedEmail = email.toLowerCase().trim();
       final user = await _authRepository.signUp(
-        email: email,
+        email: normalizedEmail,
         password: password,
         userName: userName,
         phoneNum: phoneNum,
@@ -75,11 +76,16 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       if (user != null) {
-        final userModel = await _authRepository.getCurrentUserModel();
+        // Wait a moment for the session to be established
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Get user model - pass email as fallback in case currentUser isn't set yet
+        final userModel = await _authRepository.getCurrentUserModel(emailFallback: normalizedEmail);
+        
         if (userModel != null) {
           emit(AuthAuthenticated(userModel));
         } else {
-          emit(const AuthError('Failed to create user profile'));
+          emit(const AuthError('Failed to load user profile after registration. Please try logging in.'));
         }
       } else {
         emit(const AuthError('Registration failed'));

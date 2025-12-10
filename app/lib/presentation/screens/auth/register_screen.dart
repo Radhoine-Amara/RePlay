@@ -47,6 +47,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showErrorSnackbar('Please enter your email');
       return;
     }
+    
+    // Validate email format
+    final email = _emailController.text.trim().toLowerCase();
+    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+      _showErrorSnackbar('Please enter a valid email address');
+      return;
+    }
+    
     if (_passwordController.text.isEmpty) {
       _showErrorSnackbar('Please enter your password');
       return;
@@ -63,10 +71,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     int? phoneNum;
     if (_phoneController.text.trim().isNotEmpty) {
       phoneNum = int.tryParse(_phoneController.text.trim());
+      if (phoneNum == null) {
+        _showErrorSnackbar('Please enter a valid phone number');
+        return;
+      }
     }
 
     context.read<AuthCubit>().register(
-      email: _emailController.text.trim(),
+      email: email,
       password: _passwordController.text,
       userName: _userNameController.text.trim(),
       phoneNum: phoneNum,
