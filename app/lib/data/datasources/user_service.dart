@@ -19,6 +19,7 @@ class UserService {
       }
 
       print('User created successfully with response: ${response.first}');
+      // ignore: unnecessary_cast
       return UserModel.fromJson(response.first as Map<String, dynamic>);
     } catch (e) {
       print('Error creating user: $e');
