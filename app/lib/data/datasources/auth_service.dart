@@ -28,18 +28,21 @@ class AuthService {
         // 2. Create user record in database
         final userModel = UserModel(
           userName: userName,
-          email: email,
+          email: email.toLowerCase().trim(),
           phoneNum: phoneNum,
           password: password, // In production, don't store plain passwords!
           imageUrl: imageUrl,
         );
 
-        await _userService.createUser(userModel);
+        final createdUser = await _userService.createUser(userModel);
+        if (createdUser == null) {
+          throw Exception('Failed to create user profile in database');
+        }
         
         return authResponse.user;
       }
       
-      return null;
+      throw Exception('Failed to create authentication user');
     } catch (e) {
       print('Error signing up: $e');
       rethrow;

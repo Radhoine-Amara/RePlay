@@ -16,7 +16,7 @@ class UserService {
       return UserModel.fromJson(response);
     } catch (e) {
       print('Error creating user: $e');
-      return null;
+      throw Exception('Database error: Unable to create user account. ${e.toString()}');
     }
   }
 
