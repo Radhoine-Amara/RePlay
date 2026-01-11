@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/auth_service.dart';
@@ -76,12 +77,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _saveChanges() async {
     if (_currentUser == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isSaving = true);
 
     try {
       // Validate
       if (_usernameController.text.trim().isEmpty) {
-        _showSnackbar('Username cannot be empty', isError: true);
+        _showSnackbar(l10n.usernameCannotBeEmpty, isError: true);
         setState(() => _isSaving = false);
         return;
       }
@@ -91,7 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (_selectedImageFile != null) {
         imageUrl = await _uploadImageToSupabase();
         if (imageUrl == null) {
-          _showSnackbar('Failed to upload image', isError: true);
+          _showSnackbar(l10n.failedToUploadImage, isError: true);
           setState(() => _isSaving = false);
           return;
         }
@@ -118,13 +120,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (success) {
-        _showSnackbar('Profile updated successfully!', isError: false);
+        _showSnackbar(l10n.profileUpdated, isError: false);
         await _loadUserProfile(); // Reload to confirm changes
         setState(() {
           _selectedImageFile = null; // Clear selected file after save
         });
       } else {
-        _showSnackbar('Failed to update profile', isError: true);
+        _showSnackbar(l10n.failedToUpdateProfile, isError: true);
       }
     } catch (e) {
       _showSnackbar('Error: ${e.toString()}', isError: true);
@@ -139,7 +141,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isUploadingImage = true);
 
     try {
-      final fileName = 'profile_${_currentUser!.userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName =
+          'profile_${_currentUser!.userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final bytes = await _selectedImageFile!.readAsBytes();
 
       // Upload to Supabase Storage
@@ -184,7 +187,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _selectedImageFile = File(pickedFile.path);
           _previewImageUrl = null; // Will show file preview instead
         });
-        _showSnackbar('Image selected. Click Save Changes to upload.', isError: false);
+        final l10n = AppLocalizations.of(context)!;
+        _showSnackbar(l10n.imageSelected, isError: false);
       }
     } catch (e) {
       _showSnackbar('Error picking image: $e', isError: true);
@@ -192,6 +196,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showImageUrlDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -204,16 +209,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Change Profile Photo',
-                style: TextStyle(
+              Text(
+                l10n.changeProfilePhoto,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Take Photo option
               ListTile(
                 leading: Container(
@@ -224,13 +229,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: const Icon(Icons.camera_alt, color: Color(0xFF9C4DFF)),
                 ),
-                title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
+                title: Text(
+                  l10n.takePhoto,
+                  style: const TextStyle(color: Colors.white),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
                 },
               ),
-              
+
               // Choose from Gallery option
               ListTile(
                 leading: Container(
@@ -239,15 +247,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: const Color(0xFF9C4DFF).withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.photo_library, color: Color(0xFF9C4DFF)),
+                  child: const Icon(
+                    Icons.photo_library,
+                    color: Color(0xFF9C4DFF),
+                  ),
                 ),
-                title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
+                title: Text(
+                  l10n.chooseFromGallery,
+                  style: const TextStyle(color: Colors.white),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
                 },
               ),
-              
+
               // Enter URL option
               ListTile(
                 leading: Container(
@@ -258,13 +272,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: const Icon(Icons.link, color: Color(0xFF9C4DFF)),
                 ),
-                title: const Text('Enter Image URL', style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Enter Image URL',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showUrlInputDialog();
                 },
               ),
-              
+
               // Remove photo option
               if (_previewImageUrl != null || _selectedImageFile != null)
                 ListTile(
@@ -276,7 +293,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     child: const Icon(Icons.delete, color: Colors.red),
                   ),
-                  title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                  title: Text(
+                    l10n.removePhoto,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   onTap: () {
                     Navigator.pop(ctx);
                     setState(() {
@@ -295,13 +315,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showUrlInputDialog() {
-    final tempController = TextEditingController(text: _imageUrlController.text);
-    
+    final tempController = TextEditingController(
+      text: _imageUrlController.text,
+    );
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text('Enter Image URL', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Enter Image URL',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -324,7 +350,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -338,7 +367,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               }
               Navigator.pop(ctx);
             },
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF9C4DFF)),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF9C4DFF),
+            ),
             child: const Text('Apply'),
           ),
         ],
@@ -347,6 +378,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _signOut() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -359,11 +391,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF9C4DFF)),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF9C4DFF),
+            ),
             child: const Text('Sign Out'),
           ),
         ],
@@ -383,11 +420,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text('Delete Account', style: TextStyle(color: Colors.white)),
+        title: Text(
+          l10n.deleteAccount,
+          style: const TextStyle(color: Colors.white),
+        ),
         content: const Text(
           'Are you sure you want to delete your account? This action cannot be undone.',
           style: TextStyle(color: Colors.grey),
@@ -395,12 +436,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -432,6 +476,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Colors.black,
@@ -444,9 +489,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(
+        title: Text(
+          l10n.editProfile,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
             color: Colors.white,
@@ -493,22 +538,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     height: 100,
                                   ),
                                 )
-                              : _previewImageUrl != null && _previewImageUrl!.isNotEmpty
-                                  ? ClipOval(
-                                      child: Image.network(
-                                        _previewImageUrl!,
-                                        fit: BoxFit.cover,
-                                        width: 100,
-                                        height: 100,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Icon(
-                                            Icons.person,
-                                            size: 60,
-                                            color: Colors.white,
-                                          );
-                                        },
-                                        loadingBuilder: (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
+                              : _previewImageUrl != null &&
+                                    _previewImageUrl!.isNotEmpty
+                              ? ClipOval(
+                                  child: Image.network(
+                                    _previewImageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: 100,
+                                    height: 100,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: Colors.white,
+                                      );
+                                    },
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
                                           return const Center(
                                             child: CircularProgressIndicator(
                                               color: Colors.white,
@@ -516,13 +564,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                             ),
                                           );
                                         },
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.person,
-                                      size: 60,
-                                      color: Colors.white,
-                                    ),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.white,
+                                ),
                         ),
                         Positioned(
                           bottom: 0,
@@ -584,9 +632,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Personal Information',
-                    style: TextStyle(
+                  Text(
+                    l10n.personalInformation,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -595,9 +643,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 16),
 
                   // Username
-                  const Text(
-                    'Username',
-                    style: TextStyle(
+                  Text(
+                    l10n.username,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -651,9 +699,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 16),
 
                   // Phone
-                  const Text(
-                    'Phone Number (optional)',
-                    style: TextStyle(
+                  Text(
+                    l10n.phoneNumber,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -687,7 +735,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       onPressed: _isSaving ? null : _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF9C4DFF),
-                        disabledBackgroundColor: const Color(0xFF9C4DFF).withOpacity(0.5),
+                        disabledBackgroundColor: const Color(
+                          0xFF9C4DFF,
+                        ).withOpacity(0.5),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -702,9 +752,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
-                              'Save Changes',
-                              style: TextStyle(
+                          : Text(
+                              l10n.saveChanges,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -728,9 +778,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Danger Zone',
-                    style: TextStyle(
+                  Text(
+                    l10n.dangerZone,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -754,9 +804,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'Delete Account',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.deleteAccount,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),

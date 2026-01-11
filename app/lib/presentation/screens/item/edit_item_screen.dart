@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../data/models/item_model.dart';
 import '../../../data/datasources/item_service.dart';
@@ -61,12 +62,13 @@ class _EditItemScreenState extends State<EditItemScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(
-          'Edit Item',
-          style: TextStyle(
+        title: Text(
+          l10n.editItem,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
             color: Colors.white,
@@ -104,9 +106,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Item Image',
-                        style: TextStyle(
+                      Text(
+                        l10n.productImage,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -131,7 +133,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                                 ),
                               ),
                               child: Text(
-                                'Upload',
+                                l10n.upload,
                                 style: TextStyle(
                                   color: !_useUrlInput
                                       ? const Color(0xFF9C4DFF)
@@ -158,7 +160,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                                 ),
                               ),
                               child: Text(
-                                'URL',
+                                l10n.url,
                                 style: TextStyle(
                                   color: _useUrlInput
                                       ? const Color(0xFF9C4DFF)
@@ -230,9 +232,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Basic Information',
-                    style: TextStyle(
+                  Text(
+                    l10n.basicInformation,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -241,9 +243,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   const SizedBox(height: 16),
 
                   // Title Field
-                  const Text(
-                    'Title',
-                    style: TextStyle(
+                  Text(
+                    l10n.title,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -267,9 +269,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   const SizedBox(height: 16),
 
                   // Description Field
-                  const Text(
-                    'Description',
-                    style: TextStyle(
+                  Text(
+                    l10n.description,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -307,9 +309,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Details',
-                    style: TextStyle(
+                  Text(
+                    l10n.details,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -318,9 +320,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   const SizedBox(height: 16),
 
                   // Category Dropdown
-                  const Text(
-                    'Category',
-                    style: TextStyle(
+                  Text(
+                    l10n.category,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -343,21 +345,27 @@ class _EditItemScreenState extends State<EditItemScreen> {
                         ),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Games', child: Text('Games')),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'Games',
+                          child: Text(l10n.games),
+                        ),
                         DropdownMenuItem(
                           value: 'Consoles',
-                          child: Text('Consoles'),
+                          child: Text(l10n.consoles),
                         ),
                         DropdownMenuItem(
                           value: 'Accessories',
-                          child: Text('Accessories'),
+                          child: Text(l10n.accessories),
                         ),
                         DropdownMenuItem(
                           value: 'Electronics',
-                          child: Text('Electronics'),
+                          child: Text(l10n.electronics),
                         ),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        DropdownMenuItem(
+                          value: 'Other',
+                          child: Text(l10n.other),
+                        ),
                       ],
                       onChanged: (String? newValue) {
                         setState(() {
@@ -369,9 +377,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   const SizedBox(height: 16),
 
                   // Price Field
-                  const Text(
-                    'Price',
-                    style: TextStyle(
+                  Text(
+                    l10n.price,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -411,9 +419,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Listing Type',
-                    style: TextStyle(
+                  Text(
+                    l10n.type,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -429,9 +437,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                     ),
                     child: Row(
                       children: [
-                        _buildListingTypeButton('Sell'),
-                        _buildListingTypeButton('Rent'),
-                        _buildListingTypeButton('Trade'),
+                        _buildListingTypeButton('Sell', l10n.sell),
+                        _buildListingTypeButton('Rent', l10n.rent),
+                        _buildListingTypeButton('Trade', l10n.trade),
                       ],
                     ),
                   ),
@@ -465,9 +473,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Save Changes',
-                        style: TextStyle(
+                    : Text(
+                        l10n.saveChanges,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -482,7 +490,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
   }
 
   // FIXED: Separate method for listing type buttons
-  Widget _buildListingTypeButton(String type) {
+  Widget _buildListingTypeButton(String type, String displayText) {
     bool isSelected = _selectedListingType == type;
     return Expanded(
       child: Container(
@@ -504,7 +512,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
             ),
           ),
           child: Text(
-            type,
+            displayText,
             style: TextStyle(
               color: isSelected ? Colors.white : Colors.white,
               fontWeight: FontWeight.bold,
@@ -675,6 +683,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
   }
 
   void _showImagePickerOptions() {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -687,9 +696,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Select Image Source',
-                style: TextStyle(
+              Text(
+                l10n.selectImageSource,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -701,9 +710,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   Icons.photo_library,
                   color: Color(0xFF9C4DFF),
                 ),
-                title: const Text(
-                  'Gallery',
-                  style: TextStyle(color: Colors.white),
+                title: Text(
+                  l10n.gallery,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -712,9 +721,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: Color(0xFF9C4DFF)),
-                title: const Text(
-                  'Camera',
-                  style: TextStyle(color: Colors.white),
+                title: Text(
+                  l10n.camera,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -774,6 +783,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
   Future<void> _saveChanges() async {
     if (_isSaving) return;
     setState(() => _isSaving = true);
+    final l10n = AppLocalizations.of(context)!;
 
     try {
       // Handle image URL
@@ -787,9 +797,9 @@ class _EditItemScreenState extends State<EditItemScreen> {
         // Upload new image
         finalImageUrl = await _uploadImageToSupabase(_selectedImage!);
         if (finalImageUrl == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to upload image')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.failedToUploadImage)));
           setState(() => _isSaving = false);
           return;
         }
@@ -836,12 +846,12 @@ class _EditItemScreenState extends State<EditItemScreen> {
         widget.onItemUpdated?.call(updated);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Item updated')));
+        ).showSnackBar(SnackBar(content: Text(l10n.itemUpdated)));
         Navigator.pop(context, updated);
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to update item')));
+        ).showSnackBar(SnackBar(content: Text(l10n.failedToUpdateItem)));
       }
     } catch (e) {
       ScaffoldMessenger.of(
@@ -855,15 +865,16 @@ class _EditItemScreenState extends State<EditItemScreen> {
   }
 
   void _showDeleteConfirmation() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Item'),
-        content: const Text('Are you sure you want to delete this item?'),
+        title: Text(l10n.deleteItem),
+        content: Text(l10n.deleteItemConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -872,15 +883,15 @@ class _EditItemScreenState extends State<EditItemScreen> {
               if (ok) {
                 ScaffoldMessenger.of(
                   context,
-                ).showSnackBar(const SnackBar(content: Text('Item deleted')));
+                ).showSnackBar(SnackBar(content: Text(l10n.itemDeleted)));
                 Navigator.pop(context, true);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Failed to delete item')),
+                  SnackBar(content: Text(l10n.failedToDeleteItem)),
                 );
               }
             },
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

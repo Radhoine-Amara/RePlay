@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/item_model.dart';
 import '../../logic/profile_cubit/profile_cubit.dart';
@@ -10,13 +11,14 @@ import '../../logic/item_cubit/item_cubit.dart';
 import '../../logic/favorite_cubit/favorite_cubit.dart';
 import '../../logic/auth_cubit/auth_cubit.dart';
 import '../../logic/auth_cubit/auth_state.dart';
+import '../../logic/language_cubit/language_cubit.dart';
+import '../../logic/language_cubit/language_state.dart';
 import '../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
 import 'home/product_page_screen.dart';
 import 'item/edit_item_screen.dart';
 import 'auth/login_screen.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -47,22 +49,23 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showLogoutDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Logout',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(color: Colors.grey),
+        title: Text(l10n.logout, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          l10n.logoutConfirmation,
+          style: const TextStyle(color: Colors.grey),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -70,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               _logout();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
+            child: Text(l10n.logout),
           ),
         ],
       ),
@@ -100,12 +103,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _resendVerificationEmail() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       // Do nothing if already verified
       if (_isEmailVerified()) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email already verified'),
+          SnackBar(
+            content: Text(l10n.emailAlreadyVerified),
             backgroundColor: Colors.green,
           ),
         );
@@ -114,36 +118,36 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       final authUser = context.read<AuthCubit>();
       final currentState = authUser.state;
-      
+
       if (currentState is! AuthAuthenticated) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You must be logged in'),
+          SnackBar(
+            content: Text(l10n.mustBeLoggedIn),
             backgroundColor: Colors.orange,
           ),
         );
         return;
       }
-      
+
       final email = currentState.user.email;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sending verification email...'),
+        SnackBar(
+          content: Text(l10n.sendingVerificationEmail),
           backgroundColor: Colors.blue,
         ),
       );
-      
+
       // Resend email verification using Supabase auth OTP
       await Supabase.instance.client.auth.resend(
         type: OtpType.signup,
         email: email,
       );
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Verification email sent to $email'),
+            content: Text(l10n.verificationEmailSentTo(email)),
             backgroundColor: Colors.green,
           ),
         );
@@ -152,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('${l10n.error}: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -179,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         }
 
         if (state is ProfileError) {
+          final l10n = AppLocalizations.of(context)!;
           return Scaffold(
             backgroundColor: AppColors.background,
             body: SafeArea(
@@ -196,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadUserData,
-                        child: const Text('Retry'),
+                        child: Text(l10n.retry),
                       ),
                       const SizedBox(height: 8),
                       ElevatedButton(
@@ -205,15 +210,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                           backgroundColor: Colors.red.withOpacity(0.2),
                           foregroundColor: Colors.red,
                         ),
-                        child: const Text('Logout'),
+                        child: Text(l10n.logout),
                       ),
                       if (!_isEmailVerified()) ...[
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: _resendVerificationEmail,
-                          child: const Text(
-                            'Resend Verification Email',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.resendVerificationEmail,
+                            style: const TextStyle(
                               color: AppColors.primary,
                               decoration: TextDecoration.underline,
                             ),
@@ -261,11 +266,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildHeader(UserModel? user) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           const SizedBox(height: 10),
+          // Language Switcher at top right
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [_buildLanguageSwitcher()],
+          ),
           // Profile Picture
           Stack(
             children: [
@@ -315,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(height: 16),
           // Username
           Text(
-            user?.userName ?? AppStrings.guest,
+            user?.userName ?? l10n.guest,
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 24,
@@ -331,7 +342,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                 onPressed: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const EditProfileScreen(),
+                    ),
                   );
                   // Reload data after editing
                   _loadUserData();
@@ -339,14 +352,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.surfaceLight,
                   foregroundColor: AppColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: const Text(
-                  AppStrings.editProfile,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                child: Text(
+                  l10n.editProfile,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -355,14 +374,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.withOpacity(0.2),
                   foregroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: const Text(
-                  'Logout',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                child: Text(
+                  l10n.logout,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -372,9 +397,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           if (!_isEmailVerified())
             TextButton(
               onPressed: _resendVerificationEmail,
-              child: const Text(
-                'Resend Verification Email',
-                style: TextStyle(
+              child: Text(
+                l10n.resendVerificationEmail,
+                style: const TextStyle(
                   color: AppColors.primary,
                   fontSize: 12,
                   decoration: TextDecoration.underline,
@@ -386,7 +411,50 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget _buildLanguageSwitcher() {
+    return BlocBuilder<LanguageCubit, LanguageState>(
+      builder: (context, state) {
+        final languageCubit = context.read<LanguageCubit>();
+        final isEnglish = languageCubit.isEnglish;
+
+        return GestureDetector(
+          onTap: () => languageCubit.toggleLanguage(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primary, width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.language, color: AppColors.primary, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  isEnglish ? 'EN' : 'FR',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.swap_horiz,
+                  color: AppColors.textHint,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildTabBar() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
@@ -403,15 +471,16 @@ class _ProfileScreenState extends State<ProfileScreen>
         labelColor: AppColors.textPrimary,
         unselectedLabelColor: AppColors.textHint,
         labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        tabs: const [
-          Tab(text: AppStrings.myListings),
-          Tab(text: AppStrings.favorites),
+        tabs: [
+          Tab(text: l10n.myListings),
+          Tab(text: l10n.favorites),
         ],
       ),
     );
   }
 
   Widget _buildMyListings(List<ItemModel> myListings) {
+    final l10n = AppLocalizations.of(context)!;
     if (myListings.isEmpty) {
       return Center(
         child: Column(
@@ -424,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              AppStrings.noListings,
+              l10n.noListings,
               style: TextStyle(
                 color: AppColors.textHint,
                 fontSize: 18,
@@ -433,7 +502,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              AppStrings.startAddingItems,
+              l10n.startAddingItems,
               style: TextStyle(color: AppColors.textHint, fontSize: 14),
             ),
           ],
@@ -461,6 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildFavorites(List<ItemModel> myFavorites) {
+    final l10n = AppLocalizations.of(context)!;
     if (myFavorites.isEmpty) {
       return Center(
         child: Column(
@@ -469,7 +539,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             Icon(Icons.favorite_border, size: 80, color: AppColors.textHint),
             const SizedBox(height: 16),
             Text(
-              AppStrings.noFavorites,
+              l10n.noFavorites,
               style: TextStyle(
                 color: AppColors.textHint,
                 fontSize: 18,
@@ -478,7 +548,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              AppStrings.startFavoritingItems,
+              l10n.startFavoritingItems,
               style: TextStyle(color: AppColors.textHint, fontSize: 14),
             ),
           ],
@@ -506,6 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _toggleFavorite(int itemId) {
+    final l10n = AppLocalizations.of(context)!;
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAuthenticated) {
       context.read<FavoriteCubit>().toggleFavorite(
@@ -516,9 +587,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       _loadUserData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Removed from favorites'),
-            duration: Duration(seconds: 1),
+          SnackBar(
+            content: Text(l10n.removedFromFavorites),
+            duration: const Duration(seconds: 1),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -570,7 +641,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                           children: [
                             Flexible(
                               child: _buildTypeBadge(
-                                item.type ?? AppStrings.sell,
+                                context,
+                                item.type ?? 'sell',
                               ),
                             ),
                             Row(
@@ -596,6 +668,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showListingOptions(ItemModel item) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -629,9 +702,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   child: const Icon(Icons.visibility, color: AppColors.primary),
                 ),
-                title: const Text(
-                  'View Details',
-                  style: TextStyle(color: Colors.white),
+                title: Text(
+                  l10n.viewDetails,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -651,9 +724,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   child: const Icon(Icons.edit, color: Colors.blue),
                 ),
-                title: const Text(
-                  'Edit Listing',
-                  style: TextStyle(color: Colors.white),
+                title: Text(
+                  l10n.editListing,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -670,9 +743,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   child: const Icon(Icons.delete, color: Colors.red),
                 ),
-                title: const Text(
-                  'Delete Listing',
-                  style: TextStyle(color: Colors.red),
+                title: Text(
+                  l10n.deleteListing,
+                  style: const TextStyle(color: Colors.red),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -708,27 +781,31 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _confirmDeleteListing(ItemModel item) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Delete Listing',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          l10n.deleteListing,
+          style: const TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Are you sure you want to delete "${item.title}"? This action cannot be undone.',
+          l10n.deleteListingConfirmation(item.title),
           style: const TextStyle(color: Colors.grey),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -744,8 +821,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           _loadUserData();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Listing deleted successfully'),
+              SnackBar(
+                content: Text(l10n.listingDeletedSuccess),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -754,8 +831,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to delete listing'),
+              SnackBar(
+                content: Text(l10n.failedToDeleteListing),
                 backgroundColor: Colors.red,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -854,7 +931,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                           children: [
                             Flexible(
                               child: _buildTypeBadge(
-                                item.type ?? AppStrings.sell,
+                                context,
+                                item.type ?? 'sell',
                               ),
                             ),
                             _buildUnfavoriteButton(item.itemId!),
@@ -931,10 +1009,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
                 color: Colors.black.withOpacity(0.7),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'UNAVAILABLE',
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.unavailable,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -949,14 +1027,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildPriceTag(ItemModel item) {
+    final l10n = AppLocalizations.of(context)!;
     String priceText;
     final type = item.type?.toLowerCase() ?? 'sell';
 
     if (type == 'rent') {
-      priceText =
-          '\$${item.price ?? 0}/day'; // or ${AppStrings.rent.toLowerCase()}
+      priceText = l10n.pricePerDay(item.price ?? 0);
     } else if (type == 'trade') {
-      priceText = AppStrings.trade;
+      priceText = l10n.trade;
     } else {
       priceText = '\$${item.price ?? 0}';
     }
@@ -970,7 +1048,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildTypeBadge(String type) {
+  Widget _buildTypeBadge(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;
 
@@ -979,13 +1058,13 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (typeLower == 'rent') {
       color = AppColors.info;
-      label = AppStrings.rent; // This displays as "Rent"
+      label = l10n.rent;
     } else if (typeLower == 'trade') {
       color = AppColors.primaryLight;
-      label = AppStrings.trade; // This displays as "Trade"
+      label = l10n.trade;
     } else {
       color = AppColors.success;
-      label = AppStrings.sell; // This displays as "Sell"
+      label = l10n.sell;
     }
 
     return Container(

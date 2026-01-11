@@ -1,0 +1,267 @@
+{
+  "@@locale": "en",
+  
+  "appName": "RePlay",
+  "appTagline": "Unlock Your Gaming Universe",
+  
+  "login": "Login",
+  "signUp": "Sign Up",
+  "logout": "Logout",
+  "email": "Email",
+  "emailAddress": "Email address",
+  "password": "Password",
+  "currentPassword": "Current Password",
+  "newPassword": "New Password",
+  "confirmPassword": "Confirm Password",
+  
+  "home": "Home",
+  "add": "Add",
+  "profile": "Profile",
+  "marketplace": "Marketplace",
+  
+  "editProfile": "Edit Profile",
+  "personalInformation": "Personal Information",
+  "username": "Username",
+  "phoneNumber": "Phone Number",
+  "phoneOptional": "Phone number (optional)",
+  "security": "Security",
+  "changePhoto": "Change Photo",
+  "saveChanges": "Save Changes",
+  "dangerZone": "Danger Zone",
+  "deleteAccount": "Delete Account",
+  "deleteAccountWarning": "Deleting your account is a permanent action and cannot be undone.",
+  "deleteAccountConfirm": "Are you sure you want to delete your account? This action cannot be undone.",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  
+  "addListing": "Add Listing",
+  "uploadImage": "Upload Image",
+  "addPhoto": "Add Photo",
+  "itemDetails": "Item Details",
+  "title": "Title",
+  "description": "Description",
+  "listingType": "Listing Type",
+  "price": "Price",
+  "submitListing": "Submit Listing",
+  "rent": "Rent",
+  "trade": "Trade",
+  "sell": "Sell",
+  
+  "contactSeller": "Contact seller",
+  "contactOptions": "Contact Options",
+  "messageSeller": "Message Seller",
+  "online": "Online",
+  "offline": "Offline",
+  
+  "requiredField": "This field is required",
+  "invalidEmail": "Please enter a valid email address",
+  "passwordTooShort": "Password must be at least 6 characters",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "invalidPrice": "Please enter a valid price",
+  "priceMustBePositive": "Price must be greater than 0",
+  "pleaseEnterTitle": "Please enter a title",
+  "pleaseEnterEmail": "Please enter your email",
+  "pleaseEnterPassword": "Please enter your password",
+  "pleaseEnterUsername": "Please enter your username",
+  "invalidPhoneNumber": "Please enter a valid phone number",
+  
+  "changesSaved": "Changes saved successfully!",
+  "listingSubmitted": "Listing submitted successfully!",
+  "accountDeleted": "Account deletion requested!",
+  "listingCreated": "Listing created successfully!",
+  "accountCreated": "Account created successfully!",
+  "profileUpdated": "Profile updated successfully!",
+  "imageUploaded": "Image uploaded successfully!",
+  "imageSelected": "Image selected. Click Save Changes to upload.",
+  
+  "searchPlaceholder": "Search for games or accessories...",
+  "titlePlaceholder": "e.g., God of War Ragnarök (PS5)",
+  "descriptionPlaceholder": "Describe your item, including condition, version, and any extras.",
+  "platformPlaceholder": "e.g., PS5, Xbox, Nintendo Switch",
+  "urlPlaceholder": "https://example.com/image.jpg",
+  "enterItemTitle": "Enter item title",
+  "describeYourItem": "Describe your item...",
+  
+  "guest": "Guest",
+  "myListings": "My Listings",
+  "favorites": "Favorites",
+  "noListings": "No listings yet",
+  "startAddingItems": "Start adding items to sell, rent or trade",
+  "noFavorites": "No favorites yet",
+  "startFavoritingItems": "Start favoriting items you like",
+  
+  "games": "Games",
+  "consoles": "Consoles",
+  "accessories": "Accessories",
+  "electronics": "Electronics",
+  "all": "All",
+  "uncategorized": "Uncategorized",
+  "noDescription": "No description provided.",
+  
+  "registerSubtitle": "Join the Gaming Community",
+  "createAccount": "Create Account",
+  "alreadyHaveAccount": "Already have an account? ",
+  
+  "noItemsFound": "No items found",
+  "tryDifferentSearch": "Try a different search or category",
+  "unavailable": "UNAVAILABLE",
+  
+  "pleaseLoginToFavorite": "Please log in to add favorites",
+  "errorLoadingData": "Error loading seller information",
+  "sellerNotFound": "Seller not found",
+  "tryAgain": "Try Again",
+  "retry": "Retry",
+  
+  "productImage": "Product Image",
+  "itemImage": "Item Image",
+  "upload": "Upload",
+  "url": "URL",
+  "tapToAddImage": "Tap to add image",
+  "changeImage": "Change Image",
+  
+  "basicInformation": "Basic Information",
+  "details": "Details",
+  "category": "Category",
+  "platformOptional": "Platform (optional)",
+  
+  "editItem": "Edit Item",
+  "deleteItem": "Delete Item",
+  "deleteItemConfirm": "Are you sure you want to delete this item?",
+  "itemDeleted": "Item deleted successfully",
+  "itemUpdated": "Item updated successfully",
+  
+  "loadingSellerInfo": "Loading seller info...",
+  "phoneNotAvailable": "Phone number not available",
+  "emailNotAvailable": "Email not available",
+  "couldNotOpenPhoneDialer": "Could not open phone dialer",
+  "couldNotOpenEmailClient": "Could not open email client",
+  "couldNotOpenWhatsApp": "Could not open WhatsApp",
+  "phoneNotAvailableForWhatsApp": "Phone number not available for WhatsApp",
+  "whatsAppMessage": "Hi! I found your listing on RePlay and I'm interested.",
+  "inquiryFromRePlay": "Inquiry from RePlay App",
+  
+  "logoutConfirmTitle": "Logout",
+  "logoutConfirmMessage": "Are you sure you want to logout?",
+  
+  "resendVerificationEmail": "Resend Verification Email",
+  "emailAlreadyVerified": "Email already verified",
+  "youMustBeLoggedIn": "You must be logged in",
+  "sendingVerificationEmail": "Sending verification email...",
+  "verificationEmailSent": "Verification email sent to {email}",
+  "@verificationEmailSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoggingOut": "Error logging out: {error}",
+  "@errorLoggingOut": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "language": "Language",
+  "english": "English",
+  "french": "French",
+  "settings": "Settings",
+  "changeLanguage": "Change Language",
+  
+  "usernameCannotBeEmpty": "Username cannot be empty",
+  "failedToUploadImage": "Failed to upload image",
+  "failedToUpdateProfile": "Failed to update profile",
+  
+  "takePhoto": "Take Photo",
+  "chooseFromGallery": "Choose from Gallery",
+  "enterImageUrl": "Enter Image URL",
+  "removePhoto": "Remove Photo",
+  "changeProfilePhoto": "Change Profile Photo",
+  
+  "pricePerRent": "DZD{price}/rent",
+  "@pricePerRent": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "priceAmount": "DZD{price}",
+  "@priceAmount": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "call": "Call",
+  "emailAction": "Email",
+  "whatsApp": "WhatsApp",
+  
+  "type": "Listing Type",
+  "platform": "Platform",
+  "platformHint": "e.g., PS5, Xbox, Nintendo Switch",
+  "submit": "Submit Listing",
+  "gallery": "Gallery",
+  "camera": "Camera",
+  "other": "Other",
+  
+  "pleaseEnterDescription": "Please enter a description",
+  "pleaseEnterPrice": "Please enter a price",
+  "pleaseEnterValidPrice": "Please enter a valid price",
+  "pleaseEnterValidEmail": "Please enter a valid email address",
+  "pleaseEnterValidPhone": "Please enter a valid phone number",
+  "passwordMinLength": "Password must be at least 6 characters",
+  "listingSuccess": "Listing created successfully!",
+  "listingError": "Failed to create listing. Please try again.",
+  "listingCreatedSuccess": "Listing created successfully!",
+  "accountCreatedSuccess": "Account created successfully!",
+  
+  "tagline": "Unlock Your Gaming Universe",
+  "searchHint": "Search for games or accessories...",
+  "pricePerDay": "${price}/day",
+  "@pricePerDay": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "logoutConfirmation": "Are you sure you want to logout?",
+  "mustBeLoggedIn": "You must be logged in",
+  "verificationEmailSentTo": "Verification email sent to {email}",
+  "@verificationEmailSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "error": "Error",
+  
+  "viewDetails": "View Details",
+  "editListing": "Edit Listing",
+  "deleteListing": "Delete Listing",
+  "deleteListingConfirmation": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+  "@deleteListingConfirmation": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "listingDeletedSuccess": "Listing deleted successfully",
+  "failedToDeleteListing": "Failed to delete listing",
+  "removedFromFavorites": "Removed from favorites",
+  
+  "selectImageSource": "Select Image Source",
+  "creating": "Creating...",
+  "pleaseSelectImage": "Please select an image",
+  "failedToUpdateItem": "Failed to update item",
+  "failedToDeleteItem": "Failed to delete item",
+  "deleteItemConfirmation": "Are you sure you want to delete this item?"
+}

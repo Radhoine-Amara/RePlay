@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import '../../../data/models/item_model.dart';
 import '../../../logic/item_cubit/item_cubit.dart';
 import '../../../logic/item_cubit/item_state.dart';
@@ -14,7 +15,6 @@ import '../item/add_listing_screen.dart';
 import '../profile_screen.dart';
 import '../item/edit_item_screen.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,13 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _categories = [
-    AppStrings.all,
-    AppStrings.games,
-    AppStrings.consoles,
-    AppStrings.accessories,
-    AppStrings.electronics,
-  ];
+  List<String> _getCategories(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      l10n.all,
+      l10n.games,
+      l10n.consoles,
+      l10n.accessories,
+      l10n.electronics,
+    ];
+  }
 
   @override
   void initState() {
@@ -69,7 +72,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 0) {
       context.read<ItemCubit>().filterByCategory('all');
     } else {
-      context.read<ItemCubit>().filterByCategory(_categories[index]);
+      // Use the English category names for filtering since that's what the backend uses
+      final categoryKeys = [
+        'All',
+        'Games',
+        'Consoles',
+        'Accessories',
+        'Electronics',
+      ];
+      context.read<ItemCubit>().filterByCategory(categoryKeys[index]);
     }
   }
 
@@ -85,9 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
         itemId,
       );
     } else {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to add favorites'),
+        SnackBar(
+          content: Text(l10n.pleaseLoginToFavorite),
           backgroundColor: Colors.orange,
         ),
       );
@@ -110,16 +122,17 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return AddListingScreen(
           onItemCreated: (newItem) {
+            final l10n = AppLocalizations.of(context)!;
             // Refresh items from cubit
             context.read<ItemCubit>().refreshItems();
             // Switch back to home tab
             setState(() => _currentIndex = 0);
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Listing created successfully!'),
+              SnackBar(
+                content: Text(l10n.listingCreatedSuccess),
                 backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
+                duration: const Duration(seconds: 2),
               ),
             );
           },
@@ -179,14 +192,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
-        Icon(Icons.videogame_asset, color: AppColors.primary, size: 28),
-        SizedBox(width: 8),
+      children: [
+        const Icon(Icons.videogame_asset, color: AppColors.primary, size: 28),
+        const SizedBox(width: 8),
         Text(
-          AppStrings.appName,
-          style: TextStyle(
+          l10n.appName,
+          style: const TextStyle(
             color: AppColors.primary,
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -197,6 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchField() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
       decoration: BoxDecoration(
@@ -212,9 +227,12 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               style: const TextStyle(color: AppColors.textPrimary),
               onChanged: _onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: "Search for games or accessories...",
-                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: l10n.searchHint,
+                hintStyle: const TextStyle(
+                  color: AppColors.textHint,
+                  fontSize: 14,
+                ),
                 border: InputBorder.none,
               ),
             ),
@@ -237,11 +255,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryRow() {
+    final categories = _getCategories(context);
     return SizedBox(
       height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
           final isActive = _activeCategoryIndex == index;
           return GestureDetector(
@@ -258,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Center(
                 child: Text(
-                  _categories[index],
+                  categories[index],
                   style: TextStyle(
                     color: isActive
                         ? AppColors.textPrimary
@@ -299,6 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildItemsGrid(List<ItemModel> items) {
+    final l10n = AppLocalizations.of(context)!;
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -308,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icon(Icons.search_off, size: 64, color: Colors.grey[700]),
               const SizedBox(height: 16),
               Text(
-                'No items found',
+                l10n.noItemsFound,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 18,
@@ -317,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try a different search or category',
+                l10n.tryDifferentSearch,
                 style: TextStyle(color: Colors.grey[700], fontSize: 14),
               ),
             ],
@@ -394,7 +414,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Flexible(
                               child: _buildTypeBadge(
-                                item.type ?? AppStrings.sell,
+                                context,
+                                item.type ?? 'sell',
                               ),
                             ),
                             Row(
@@ -459,10 +480,10 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!item.status)
           Container(
             color: Colors.black.withOpacity(0.7),
-            child: const Center(
+            child: Center(
               child: Text(
-                'UNAVAILABLE',
-                style: TextStyle(
+                AppLocalizations.of(context)!.unavailable,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
@@ -520,11 +541,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPriceTag(ItemModel item) {
+    final l10n = AppLocalizations.of(context)!;
     String priceText;
     if (item.type == 'rent') {
-      priceText = '\$${item.price ?? 0}/day';
+      priceText = l10n.pricePerDay(item.price ?? 0);
     } else if (item.type == 'trade') {
-      priceText = 'Trade';
+      priceText = l10n.trade;
     } else {
       priceText = '\$${item.price ?? 0}';
     }
@@ -539,23 +561,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTypeBadge(String type) {
+  Widget _buildTypeBadge(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;
 
     // Convert to lowercase for consistent comparison
     final typeLower = type.toLowerCase();
 
-    if (typeLower == 'rent' || typeLower == AppStrings.rent.toLowerCase()) {
+    if (typeLower == 'rent') {
       color = AppColors.info;
-      label = AppStrings.rent; // Display as "Rent"
-    } else if (typeLower == 'trade' ||
-        typeLower == AppStrings.trade.toLowerCase()) {
+      label = l10n.rent;
+    } else if (typeLower == 'trade') {
       color = AppColors.primaryLight;
-      label = AppStrings.trade; // Display as "Trade"
+      label = l10n.trade;
     } else {
       color = AppColors.success;
-      label = AppStrings.sell; // Display as "Sell"
+      label = l10n.sell;
     }
 
     return Container(
@@ -600,6 +622,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNavBar() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF1A1A1A),
@@ -619,13 +642,19 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.grey,
         elevation: 0,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Add',
+            icon: const Icon(Icons.home),
+            label: l10n.home,
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.add_circle_outline),
+            label: l10n.add,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person),
+            label: l10n.profile,
+          ),
         ],
       ),
     );

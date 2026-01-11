@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import 'item/add_listing_screen.dart';
 import 'profile_screen.dart';
 import 'home/home_screen.dart';
 import '../../data/models/user_model.dart';
 import '../../data/datasources/user_service.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/helpers.dart';
 import '../../core/widgets/loading_widget.dart';
 
@@ -31,33 +31,35 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
   }
 
   Future<void> _loadSellerInfo() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final seller = await _userService.getUserById(widget.sellerId);
       setState(() {
         _seller = seller;
         _isLoading = false;
         if (seller == null) {
-          _errorMessage = AppStrings.errorLoadingData;
+          _errorMessage = l10n.errorLoadingData;
         }
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = AppStrings.errorLoadingData;
+        _errorMessage = l10n.errorLoadingData;
       });
     }
   }
 
   Future<void> _handlePhoneCall() async {
+    final l10n = AppLocalizations.of(context)!;
     final phoneNumber = _seller?.phoneNum?.toString();
 
     if (phoneNumber == null || phoneNumber.isEmpty) {
-      Helpers.showErrorSnackbar(context, 'Phone number not available');
+      Helpers.showErrorSnackbar(context, l10n.phoneNotAvailable);
       return;
     }
 
     if (!Helpers.isValidPhoneNumber(phoneNumber)) {
-      Helpers.showErrorSnackbar(context, 'Invalid phone number');
+      Helpers.showErrorSnackbar(context, l10n.phoneNotAvailable);
       return;
     }
 
@@ -65,69 +67,66 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
       await Helpers.makePhoneCall(phoneNumber);
     } catch (e) {
       if (mounted) {
-        Helpers.showErrorSnackbar(context, 'Could not open phone dialer');
+        Helpers.showErrorSnackbar(context, l10n.couldNotOpenPhoneDialer);
       }
     }
   }
 
   Future<void> _handleEmail() async {
+    final l10n = AppLocalizations.of(context)!;
     final email = _seller?.email;
 
     if (email == null || email.isEmpty) {
-      Helpers.showErrorSnackbar(context, 'Email not available');
+      Helpers.showErrorSnackbar(context, l10n.emailNotAvailable);
       return;
     }
 
     if (!Helpers.isValidEmail(email)) {
-      Helpers.showErrorSnackbar(context, 'Invalid email address');
+      Helpers.showErrorSnackbar(context, l10n.emailNotAvailable);
       return;
     }
 
     try {
-      await Helpers.sendEmail(email, subject: 'Inquiry from RePlay App');
+      await Helpers.sendEmail(email, subject: l10n.inquiryFromRePlay);
     } catch (e) {
       if (mounted) {
-        Helpers.showErrorSnackbar(context, 'Could not open email client');
+        Helpers.showErrorSnackbar(context, l10n.couldNotOpenEmailClient);
       }
     }
   }
 
   Future<void> _handleWhatsApp() async {
+    final l10n = AppLocalizations.of(context)!;
     final phoneNumber = _seller?.phoneNum?.toString();
 
     if (phoneNumber == null || phoneNumber.isEmpty) {
-      Helpers.showErrorSnackbar(
-        context,
-        'Phone number not available for WhatsApp',
-      );
+      Helpers.showErrorSnackbar(context, l10n.phoneNotAvailable);
       return;
     }
 
     if (!Helpers.isValidPhoneNumber(phoneNumber)) {
-      Helpers.showErrorSnackbar(context, 'Invalid phone number');
+      Helpers.showErrorSnackbar(context, l10n.phoneNotAvailable);
       return;
     }
 
     try {
-      await Helpers.openWhatsApp(
-        phoneNumber,
-        'Hi! I found your listing on RePlay and I\'m interested.',
-      );
+      await Helpers.openWhatsApp(phoneNumber, l10n.whatsAppMessage);
     } catch (e) {
       if (mounted) {
-        Helpers.showErrorSnackbar(context, 'Could not open WhatsApp');
+        Helpers.showErrorSnackbar(context, l10n.couldNotOpenWhatsApp);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          AppStrings.contactSeller,
-          style: TextStyle(
+        title: Text(
+          l10n.contactSeller,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
             color: AppColors.textPrimary,
@@ -145,7 +144,7 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
         ),
       ),
       body: _isLoading
-          ? const LoadingWidget(message: 'Loading seller info...')
+          ? LoadingWidget(message: l10n.loadingSellerInfo)
           : _errorMessage != null
           ? _buildErrorState()
           : _buildContent(),
@@ -156,18 +155,18 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: AppStrings.home,
+            icon: const Icon(Icons.home_outlined),
+            label: l10n.home,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: AppStrings.add,
+            icon: const Icon(Icons.add_circle_outline),
+            label: l10n.add,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outlined),
-            label: AppStrings.profile,
+            icon: const Icon(Icons.person_outlined),
+            label: l10n.profile,
           ),
         ],
         onTap: (index) {
@@ -198,6 +197,7 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
   }
 
   Widget _buildErrorState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -205,7 +205,7 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
           const Icon(Icons.error_outline, color: AppColors.error, size: 64),
           const SizedBox(height: 16),
           Text(
-            _errorMessage ?? AppStrings.sellerNotFound,
+            _errorMessage ?? l10n.sellerNotFound,
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 16,
@@ -222,9 +222,9 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
               _loadSellerInfo();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text(
-              AppStrings.tryAgain,
-              style: TextStyle(color: AppColors.textPrimary),
+            child: Text(
+              l10n.retry,
+              style: const TextStyle(color: AppColors.textPrimary),
             ),
           ),
         ],
@@ -233,6 +233,7 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
   }
 
   Widget _buildContent() {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -278,7 +279,7 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _seller?.userName ?? AppStrings.guest,
+                        _seller?.userName ?? l10n.guest,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -312,9 +313,9 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  AppStrings.contactOptions,
-                  style: TextStyle(
+                Text(
+                  l10n.contactOptions,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -333,9 +334,9 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
                       Icons.phone,
                       color: AppColors.textSecondary,
                     ),
-                    title: const Text(
-                      AppStrings.phoneNumber,
-                      style: TextStyle(
+                    title: Text(
+                      l10n.phoneNumber,
+                      style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -343,7 +344,7 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
                     subtitle: Text(
                       _seller?.phoneNum != null
                           ? '+${_seller!.phoneNum}'
-                          : AppStrings.phoneNotAvailable,
+                          : l10n.phoneNotAvailable,
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                     trailing: const Icon(
@@ -367,15 +368,15 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
                       Icons.email,
                       color: AppColors.textSecondary,
                     ),
-                    title: const Text(
-                      AppStrings.emailAddress,
-                      style: TextStyle(
+                    title: Text(
+                      l10n.emailAddress,
+                      style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     subtitle: Text(
-                      _seller?.email ?? AppStrings.emailNotAvailable,
+                      _seller?.email ?? l10n.emailNotAvailable,
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                     trailing: const Icon(
@@ -405,9 +406,12 @@ class _ContactSellerScreenState extends State<ContactSellerScreen> {
                 ),
               ),
               icon: const Icon(Icons.message),
-              label: const Text(
-                AppStrings.messageSeller,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              label: Text(
+                l10n.messageSeller,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

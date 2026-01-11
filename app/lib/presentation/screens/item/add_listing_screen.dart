@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import '../../../data/datasources/item_service.dart';
 import '../../../data/datasources/auth_service.dart';
 import '../../../data/datasources/user_service.dart';
@@ -58,12 +59,13 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(
-          'Add Listing',
-          style: TextStyle(
+        title: Text(
+          l10n.addListing,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
             color: Colors.white,
@@ -94,9 +96,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Product Image',
-                        style: TextStyle(
+                      Text(
+                        l10n.productImage,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -121,7 +123,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                                 ),
                               ),
                               child: Text(
-                                'Upload',
+                                l10n.upload,
                                 style: TextStyle(
                                   color: !_useUrlInput
                                       ? const Color(0xFF9C4DFF)
@@ -148,7 +150,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                                 ),
                               ),
                               child: Text(
-                                'URL',
+                                l10n.url,
                                 style: TextStyle(
                                   color: _useUrlInput
                                       ? const Color(0xFF9C4DFF)
@@ -234,18 +236,18 @@ class _AddListingScreenState extends State<AddListingScreen> {
                                   style: BorderStyle.solid,
                                 ),
                               ),
-                              child: const Column(
+                              child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.add_photo_alternate_outlined,
                                     color: Colors.white,
                                     size: 40,
                                   ),
-                                  SizedBox(height: 8),
+                                  const SizedBox(height: 8),
                                   Text(
-                                    'Tap to add image',
-                                    style: TextStyle(
+                                    l10n.tapToAddImage,
+                                    style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
                                     ),
@@ -264,9 +266,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                                 color: Colors.white,
                                 size: 16,
                               ),
-                              label: const Text(
-                                'Change Image',
-                                style: TextStyle(color: Colors.white),
+                              label: Text(
+                                l10n.changeImage,
+                                style: const TextStyle(color: Colors.white),
                               ),
                             ),
                           ),
@@ -288,9 +290,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Item Details',
-                    style: TextStyle(
+                  Text(
+                    l10n.itemDetails,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -299,9 +301,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   const SizedBox(height: 16),
 
                   // Title Field
-                  const Text(
-                    'Title',
-                    style: TextStyle(
+                  Text(
+                    l10n.title,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -325,9 +327,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   const SizedBox(height: 16),
 
                   // Description Field
-                  const Text(
-                    'Description',
-                    style: TextStyle(
+                  Text(
+                    l10n.description,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -353,9 +355,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   const SizedBox(height: 16),
 
                   // Platform Field (optional)
-                  const Text(
-                    'Platform (optional)',
-                    style: TextStyle(
+                  Text(
+                    '${l10n.platform} (optional)',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -366,7 +368,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                     controller: _platformController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'e.g., PS5, Xbox, Nintendo Switch',
+                      hintText: l10n.platformHint,
                       hintStyle: const TextStyle(color: Colors.grey),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -392,9 +394,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Category',
-                    style: TextStyle(
+                  Text(
+                    l10n.category,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -417,21 +419,27 @@ class _AddListingScreenState extends State<AddListingScreen> {
                         ),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Games', child: Text('Games')),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'Games',
+                          child: Text(l10n.games),
+                        ),
                         DropdownMenuItem(
                           value: 'Consoles',
-                          child: Text('Consoles'),
+                          child: Text(l10n.consoles),
                         ),
                         DropdownMenuItem(
                           value: 'Accessories',
-                          child: Text('Accessories'),
+                          child: Text(l10n.accessories),
                         ),
                         DropdownMenuItem(
                           value: 'Electronics',
-                          child: Text('Electronics'),
+                          child: Text(l10n.electronics),
                         ),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        DropdownMenuItem(
+                          value: 'Other',
+                          child: Text(l10n.other),
+                        ),
                       ],
                       onChanged: (String? newValue) {
                         setState(() {
@@ -456,9 +464,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Listing Type',
-                    style: TextStyle(
+                  Text(
+                    l10n.type,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -472,9 +480,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                     ),
                     child: Row(
                       children: [
-                        _buildTypeButton('Rent', 'rent'),
-                        _buildTypeButton('Trade', 'trade'),
-                        _buildTypeButton('Sell', 'sell'),
+                        _buildTypeButton(l10n.rent, 'rent'),
+                        _buildTypeButton(l10n.trade, 'trade'),
+                        _buildTypeButton(l10n.sell, 'sell'),
                       ],
                     ),
                   ),
@@ -496,9 +504,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        'Price',
-                        style: TextStyle(
+                      Text(
+                        l10n.price,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -564,9 +572,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Submit Listing',
-                        style: TextStyle(
+                    : Text(
+                        l10n.submit,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -619,6 +627,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
   }
 
   void _showImagePickerOptions() {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -631,9 +640,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Select Image Source',
-                style: TextStyle(
+              Text(
+                l10n.chooseFromGallery,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -645,9 +654,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   Icons.photo_library,
                   color: Color(0xFF9C4DFF),
                 ),
-                title: const Text(
-                  'Gallery',
-                  style: TextStyle(color: Colors.white),
+                title: Text(
+                  l10n.gallery,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -656,9 +665,9 @@ class _AddListingScreenState extends State<AddListingScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: Color(0xFF9C4DFF)),
-                title: const Text(
-                  'Camera',
-                  style: TextStyle(color: Colors.white),
+                title: Text(
+                  l10n.camera,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -673,6 +682,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
         source: source,
@@ -687,7 +697,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
         });
       }
     } catch (e) {
-      _showSnackbar('Failed to pick image: ${e.toString()}', isError: true);
+      _showSnackbar('${l10n.listingError}: ${e.toString()}', isError: true);
     }
   }
 
@@ -712,19 +722,20 @@ class _AddListingScreenState extends State<AddListingScreen> {
   }
 
   Future<void> _submitListing() async {
+    final l10n = AppLocalizations.of(context)!;
     // Validation
     if (_titleController.text.trim().isEmpty) {
-      _showSnackbar('Please enter a title', isError: true);
+      _showSnackbar(l10n.pleaseEnterTitle, isError: true);
       return;
     }
 
     if (_selectedType != 'trade' && _priceController.text.trim().isEmpty) {
-      _showSnackbar('Please enter a price', isError: true);
+      _showSnackbar(l10n.pleaseEnterPrice, isError: true);
       return;
     }
 
     if (_descriptionController.text.trim().isEmpty) {
-      _showSnackbar('Please enter a description', isError: true);
+      _showSnackbar(l10n.pleaseEnterDescription, isError: true);
       return;
     }
 
@@ -733,27 +744,26 @@ class _AddListingScreenState extends State<AddListingScreen> {
     try {
       // Get current user ID from auth
       final authUser = _authService.getCurrentUser();
-      
+
       // Try to get user email from multiple sources
       String? email;
-      if (authUser != null && authUser.email != null && authUser.email!.isNotEmpty) {
+      if (authUser != null &&
+          authUser.email != null &&
+          authUser.email!.isNotEmpty) {
         email = authUser.email;
       } else if (authUser?.userMetadata?['email'] != null) {
         email = authUser!.userMetadata!['email'] as String;
       }
-      
+
       if (email == null) {
-        _showSnackbar(
-          'You must be logged in to create a listing',
-          isError: true,
-        );
+        _showSnackbar(l10n.youMustBeLoggedIn, isError: true);
         setState(() => _isSubmitting = false);
         return;
       }
-      
+
       // Try to get user from database using email
       final dbUser = await _userService.getUserByEmail(email);
-      
+
       if (dbUser == null || dbUser.userId == null) {
         _showSnackbar(
           'User profile not found. Please log out and log in again.',
@@ -769,7 +779,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
       if (_selectedType != 'trade') {
         price = int.tryParse(_priceController.text.trim());
         if (price == null) {
-          _showSnackbar('Please enter a valid price', isError: true);
+          _showSnackbar(l10n.pleaseEnterValidPrice, isError: true);
           setState(() => _isSubmitting = false);
           return;
         }
@@ -786,10 +796,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
         // Upload image to Supabase storage
         finalImageUrl = await _uploadImageToSupabase(_selectedImage!);
         if (finalImageUrl == null) {
-          _showSnackbar(
-            'Failed to upload image. Please try again.',
-            isError: true,
-          );
+          _showSnackbar(l10n.listingError, isError: true);
           setState(() => _isSubmitting = false);
           return;
         }
@@ -820,7 +827,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
           widget.onItemCreated(created);
         } catch (_) {}
 
-        _showSnackbar('Listing created successfully!', isError: false);
+        _showSnackbar(l10n.listingSuccess, isError: false);
 
         // Clear form
         _titleController.clear();
@@ -852,13 +859,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
           }
         }
       } else {
-        _showSnackbar(
-          'Failed to create listing. Please try again.',
-          isError: true,
-        );
+        _showSnackbar(l10n.listingError, isError: true);
       }
     } catch (e) {
-      _showSnackbar('Error: ${e.toString()}', isError: true);
+      _showSnackbar('${l10n.listingError}: ${e.toString()}', isError: true);
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

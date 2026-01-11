@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import '../../../logic/auth_cubit/auth_cubit.dart';
 import '../../../logic/auth_cubit/auth_state.dart';
 import '../../../logic/item_cubit/item_cubit.dart';
@@ -30,13 +31,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() {
+    final l10n = AppLocalizations.of(context)!;
     // Validate inputs
     if (_emailController.text.trim().isEmpty) {
-      _showErrorSnackbar('Please enter your email');
+      _showErrorSnackbar(l10n.pleaseEnterEmail);
       return;
     }
     if (_passwordController.text.isEmpty) {
-      _showErrorSnackbar('Please enter your password');
+      _showErrorSnackbar(l10n.pleaseEnterPassword);
       return;
     }
 
@@ -81,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, state) {
           final isLoading = state is AuthLoading;
+          final l10n = AppLocalizations.of(context)!;
 
           return Scaffold(
             backgroundColor: Colors.black,
@@ -110,9 +113,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Unlock Your Gaming Universe',
-                      style: TextStyle(
+                    Text(
+                      l10n.tagline,
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -131,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Icons.email_outlined,
                           color: Colors.white70,
                         ),
-                        hintText: 'Email address',
+                        hintText: l10n.emailAddress,
                         hintStyle: const TextStyle(color: Colors.white70),
                         filled: true,
                         fillColor: Colors.transparent,
@@ -177,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             });
                           },
                         ),
-                        hintText: 'Password',
+                        hintText: l10n.password,
                         hintStyle: const TextStyle(color: Colors.white70),
                         filled: true,
                         fillColor: Colors.transparent,
@@ -223,9 +226,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'Login',
-                                style: TextStyle(
+                            : Text(
+                                l10n.login,
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -260,9 +263,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          'Sign Up',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.signUp,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,

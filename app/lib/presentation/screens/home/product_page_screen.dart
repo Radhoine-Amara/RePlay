@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import '../contact_seller_screen.dart';
 import '../home/home_screen.dart';
 import '../profile_screen.dart';
@@ -7,7 +8,6 @@ import '../../../data/models/item_model.dart';
 // ignore: unused_import
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 
 class Productpage extends StatefulWidget {
   final ItemModel item;
@@ -22,6 +22,7 @@ class _ProductpageState extends State<Productpage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -55,7 +56,9 @@ class _ProductpageState extends State<Productpage> {
                       child: Container(
                         width: double.infinity,
                         color: AppColors.cardBackground,
-                        child: widget.item.imageUrl != null && widget.item.imageUrl!.isNotEmpty
+                        child:
+                            widget.item.imageUrl != null &&
+                                widget.item.imageUrl!.isNotEmpty
                             ? Image.network(
                                 widget.item.imageUrl!,
                                 fit: BoxFit.contain,
@@ -71,20 +74,26 @@ class _ProductpageState extends State<Productpage> {
                                     ),
                                   );
                                 },
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    height: 300,
-                                    alignment: Alignment.center,
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.primary,
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  );
-                                },
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        height: 300,
+                                        alignment: Alignment.center,
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.primary,
+                                          value:
+                                              loadingProgress
+                                                      .expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                        .cumulativeBytesLoaded /
+                                                    loadingProgress
+                                                        .expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      );
+                                    },
                               )
                             : Container(
                                 height: 300,
@@ -98,7 +107,7 @@ class _ProductpageState extends State<Productpage> {
                       ),
                     ),
                   ),
-                  
+
                   // Product Info Section - RIGHT AFTER IMAGE
                   Container(
                     width: double.infinity,
@@ -122,24 +131,26 @@ class _ProductpageState extends State<Productpage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        
+
                         // Category
                         Text(
-                          widget.item.category ?? AppStrings.uncategorized,
+                          widget.item.category ?? l10n.uncategorized,
                           style: const TextStyle(
                             color: AppColors.textHint,
                             fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Price/Type
                         Text(
                           widget.item.type == 'trade'
-                              ? AppStrings.trade
+                              ? l10n.trade
                               : widget.item.type == 'rent'
-                                  ? 'DZD${widget.item.price ?? 0}/${AppStrings.rent.toLowerCase()}'
-                                  : 'DZD${widget.item.price ?? 0}',
+                              ? l10n.pricePerDay(
+                                  (widget.item.price ?? 0).toInt(),
+                                )
+                              : 'DZD${widget.item.price ?? 0}',
                           style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 24,
@@ -147,10 +158,10 @@ class _ProductpageState extends State<Productpage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Description
                         Text(
-                          widget.item.description ?? AppStrings.noDescription,
+                          widget.item.description ?? l10n.noDescription,
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             height: 1.5,
@@ -160,14 +171,14 @@ class _ProductpageState extends State<Productpage> {
                       ],
                     ),
                   ),
-                  
+
                   // Add bottom padding to prevent content from being hidden behind fixed button
                   const SizedBox(height: 90),
                 ],
               ),
             ),
           ),
-          
+
           // Fixed Contact Seller Button at Bottom
           Container(
             padding: const EdgeInsets.all(16.0),
@@ -192,9 +203,8 @@ class _ProductpageState extends State<Productpage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ContactSellerScreen(
-                          sellerId: widget.item.userId,
-                        ),
+                        builder: (context) =>
+                            ContactSellerScreen(sellerId: widget.item.userId),
                       ),
                     );
                   },
@@ -206,9 +216,9 @@ class _ProductpageState extends State<Productpage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    AppStrings.contactSeller,
-                    style: TextStyle(
+                  child: Text(
+                    l10n.contactSeller,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -219,7 +229,7 @@ class _ProductpageState extends State<Productpage> {
           ),
         ],
       ),
-      
+
       // Bottom Navigation Bar
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -233,25 +243,25 @@ class _ProductpageState extends State<Productpage> {
           type: BottomNavigationBarType.fixed,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.textSecondary,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              label: AppStrings.home,
+              icon: const Icon(Icons.home_outlined),
+              label: l10n.home,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline),
-              label: AppStrings.add,
+              icon: const Icon(Icons.add_circle_outline),
+              label: l10n.add,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outlined),
-              label: AppStrings.profile,
+              icon: const Icon(Icons.person_outlined),
+              label: l10n.profile,
             ),
           ],
           onTap: (index) {
             setState(() {
               _currentIndex = index;
             });
-            
+
             if (index == 0) {
               Navigator.pushReplacement(
                 context,

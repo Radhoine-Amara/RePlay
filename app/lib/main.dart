@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 
 // Cubits
 import 'logic/auth_cubit/auth_cubit.dart';
 import 'logic/profile_cubit/profile_cubit.dart';
 import 'logic/item_cubit/item_cubit.dart';
 import 'logic/favorite_cubit/favorite_cubit.dart';
+import 'logic/language_cubit/language_cubit.dart';
+import 'logic/language_cubit/language_state.dart';
 
 // Screens
 import 'presentation/screens/auth/login_screen.dart';
@@ -22,8 +26,8 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-    // Check if a session exists
-    final session = Supabase.instance.client.auth.currentSession;
+  // Check if a session exists
+  final session = Supabase.instance.client.auth.currentSession;
 
   runApp(MyApp(initialSession: session));
 }
@@ -41,12 +45,34 @@ class MyApp extends StatelessWidget {
         BlocProvider<ProfileCubit>(create: (_) => ProfileCubit()),
         BlocProvider<ItemCubit>(create: (_) => ItemCubit()..loadAllItems()),
         BlocProvider<FavoriteCubit>(create: (_) => FavoriteCubit()),
+        BlocProvider<LanguageCubit>(
+          create: (_) => LanguageCubit()..loadLanguage(),
+        ),
       ],
-      child: MaterialApp(
-        title: 'RePlay',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-        home: initialSession != null ? const HomeScreen() : const LoginScreen(),
+      child: BlocBuilder<LanguageCubit, LanguageState>(
+        builder: (context, state) {
+          Locale locale = LanguageCubit.defaultLocale;
+          if (state is LanguageLoaded) {
+            locale = state.locale;
+          }
+
+          return MaterialApp(
+            title: 'RePlay',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+            locale: locale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: LanguageCubit.supportedLocales,
+            home: initialSession != null
+                ? const HomeScreen()
+                : const LoginScreen(),
+          );
+        },
       ),
     );
   }

@@ -2,13 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile_dev_app_gaming/l10n/app_localizations.dart';
 import '../../../logic/auth_cubit/auth_cubit.dart';
 import '../../../logic/auth_cubit/auth_state.dart';
 import '../home/home_screen.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_textfield.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -38,33 +38,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _handleSignUp() {
+    final l10n = AppLocalizations.of(context)!;
     // Validate inputs
     if (_userNameController.text.trim().isEmpty) {
-      _showErrorSnackbar('Please enter your username');
+      _showErrorSnackbar(l10n.pleaseEnterUsername);
       return;
     }
     if (_emailController.text.trim().isEmpty) {
-      _showErrorSnackbar('Please enter your email');
+      _showErrorSnackbar(l10n.pleaseEnterEmail);
       return;
     }
-    
+
     // Validate email format
     final email = _emailController.text.trim().toLowerCase();
-    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
-      _showErrorSnackbar('Please enter a valid email address');
+    if (!RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(email)) {
+      _showErrorSnackbar(l10n.pleaseEnterValidEmail);
       return;
     }
-    
+
     if (_passwordController.text.isEmpty) {
-      _showErrorSnackbar('Please enter your password');
+      _showErrorSnackbar(l10n.pleaseEnterPassword);
       return;
     }
     if (_passwordController.text.length < 6) {
-      _showErrorSnackbar('Password must be at least 6 characters');
+      _showErrorSnackbar(l10n.passwordMinLength);
       return;
     }
     if (_passwordController.text != _confirmPasswordController.text) {
-      _showErrorSnackbar('Passwords do not match');
+      _showErrorSnackbar(l10n.passwordsDoNotMatch);
       return;
     }
 
@@ -72,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_phoneController.text.trim().isNotEmpty) {
       phoneNum = int.tryParse(_phoneController.text.trim());
       if (phoneNum == null) {
-        _showErrorSnackbar('Please enter a valid phone number');
+        _showErrorSnackbar(l10n.pleaseEnterValidPhone);
         return;
       }
     }
@@ -109,8 +112,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
+        final l10n = AppLocalizations.of(context)!;
         if (state is AuthAuthenticated) {
-          _showSuccessSnackbar('Account created successfully!');
+          _showSuccessSnackbar(l10n.accountCreatedSuccess);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -121,6 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
       builder: (context, state) {
         final isLoading = state is AuthLoading;
+        final l10n = AppLocalizations.of(context)!;
 
         return Scaffold(
           backgroundColor: Colors.black,
@@ -138,18 +143,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.videogame_asset,
                         color: AppColors.primary,
                         size: 40,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        AppStrings.appName,
-                        style: TextStyle(
+                        l10n.appName,
+                        style: const TextStyle(
                           color: AppColors.primary,
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
@@ -158,9 +163,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    AppStrings.registerSubtitle,
-                    style: TextStyle(
+                  Text(
+                    l10n.registerSubtitle,
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -172,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _userNameController,
                     enabled: !isLoading,
-                    hintText: AppStrings.username,
+                    hintText: l10n.username,
                     prefixIcon: Icons.person_outline,
                   ),
                   const SizedBox(height: 15),
@@ -181,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _emailController,
                     enabled: !isLoading,
-                    hintText: AppStrings.email,
+                    hintText: l10n.email,
                     prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -191,7 +196,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _phoneController,
                     enabled: !isLoading,
-                    hintText: AppStrings.phoneOptional,
+                    hintText: l10n.phoneOptional,
                     prefixIcon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
@@ -201,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _passwordController,
                     enabled: !isLoading,
-                    hintText: AppStrings.password,
+                    hintText: l10n.password,
                     prefixIcon: Icons.lock_outline,
                     obscureText: _obscurePassword,
                     suffixIcon: IconButton(
@@ -224,7 +229,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _confirmPasswordController,
                     enabled: !isLoading,
-                    hintText: AppStrings.confirmPassword,
+                    hintText: l10n.confirmPassword,
                     prefixIcon: Icons.lock_outline,
                     obscureText: _obscureConfirmPassword,
                     suffixIcon: IconButton(
@@ -248,7 +253,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     child: CustomButton(
                       onPressed: isLoading ? null : _handleSignUp,
-                      text: AppStrings.createAccount,
+                      text: l10n.createAccount,
                       isLoading: isLoading,
                       backgroundColor: AppColors.success,
                     ),
@@ -259,15 +264,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        AppStrings.alreadyHaveAccount,
-                        style: TextStyle(color: AppColors.textSecondary),
+                      Text(
+                        l10n.alreadyHaveAccount,
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       GestureDetector(
                         onTap: isLoading ? null : () => Navigator.pop(context),
-                        child: const Text(
-                          AppStrings.login,
-                          style: TextStyle(
+                        child: Text(
+                          l10n.login,
+                          style: const TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
