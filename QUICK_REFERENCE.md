@@ -1,6 +1,6 @@
 # RePlay - Quick Reference Guide
 
-**Last Updated:** December 10, 2025
+**Last Updated:** January 14, 2026
 
 ---
 
@@ -30,6 +30,7 @@
 | **ItemCubit** | `logic/item_cubit/` | Items/Listings | ItemInitial, ItemLoading, ItemLoaded, ItemOperationInProgress, ItemOperationSuccess, ItemError |
 | **FavoriteCubit** | `logic/favorite_cubit/` | Favorites | FavoriteInitial, FavoriteLoading, FavoriteLoaded, FavoriteError |
 | **ProfileCubit** | `logic/profile_cubit/` | User Profile | ProfileInitial, ProfileLoading, ProfileLoaded, ProfileError |
+| **LanguageCubit** | `logic/language_cubit/` | Localization | LanguageInitial, LanguageLoaded |
 
 ---
 
@@ -130,6 +131,20 @@ await context.read<ProfileCubit>().loadProfile();
 
 // Load another user's profile
 await context.read<ProfileCubit>().loadUserProfile(userId);
+```
+
+### LanguageCubit
+```dart
+// Load saved language on app start
+await context.read<LanguageCubit>().loadLanguage();
+
+// Change language (English/French)
+await context.read<LanguageCubit>().changeLanguage(Locale('fr'));
+
+// Get localized strings
+final l10n = AppLocalizations.of(context)!;
+Text(l10n.appName);  // "RePlay"
+Text(l10n.login);    // "Login" or "Connexion"
 ```
 
 ---
@@ -367,6 +382,12 @@ if (favState is FavoriteLoaded) {
 ```
 lib/
 ├── main.dart                           # App entry point
+├── l10n/                               # Localization files
+│   ├── app_en.arb                     # English translations (220+ keys)
+│   ├── app_fr.arb                     # French translations (220+ keys)
+│   ├── app_localizations.dart         # Generated localization class
+│   ├── app_localizations_en.dart      # Generated English impl
+│   └── app_localizations_fr.dart      # Generated French impl
 ├── core/
 │   ├── constants/
 │   │   ├── app_colors.dart
@@ -384,6 +405,7 @@ lib/
 │   │   ├── item_service.dart          # Items CRUD
 │   │   ├── user_service.dart          # Users CRUD
 │   │   ├── favorite_service.dart      # Favorites CRUD
+│   │   ├── language_service.dart      # Language persistence
 │   │   └── supabase_service.dart      # Supabase client
 │   ├── models/
 │   │   ├── user_model.dart
@@ -404,9 +426,12 @@ lib/
 │   ├── favorite_cubit/
 │   │   ├── favorite_cubit.dart
 │   │   └── favorite_state.dart
-│   └── profile_cubit/
-│       ├── profile_cubit.dart
-│       └── profile_state.dart
+│   ├── profile_cubit/
+│   │   ├── profile_cubit.dart
+│   │   └── profile_state.dart
+│   └── language_cubit/
+│       ├── language_cubit.dart
+│       └── language_state.dart
 └── presentation/
     └── screens/
         ├── splash_screen.dart
@@ -526,6 +551,59 @@ if (Helpers.isValidPhoneNumber(phone)) {
 3. **Session:** Stored in Supabase, cleared on logout
 4. **Image URLs:** Public, but only valid Supabase links
 5. **Phone numbers:** Validated & formatted before external apps
+
+---
+
+## 🌍 LOCALIZATION (i18n)
+
+### Supported Languages
+- **English (en)** - Default
+- **French (fr)**
+
+### Key Translation Files
+- `lib/l10n/app_en.arb` - English (220+ keys)
+- `lib/l10n/app_fr.arb` - French (220+ keys)
+
+### Usage in Screens
+```dart
+// Get localizations
+final l10n = AppLocalizations.of(context)!;
+
+// Use translated strings
+Text(l10n.appName);        // "RePlay"
+Text(l10n.login);          // "Login" or "Connexion"
+Text(l10n.contactSeller);  // "Contact Seller" or "Contacter le vendeur"
+```
+
+### Change Language
+```dart
+// Switch to French
+context.read<LanguageCubit>().changeLanguage(Locale('fr'));
+
+// Switch to English
+context.read<LanguageCubit>().changeLanguage(Locale('en'));
+```
+
+### Language Persistence
+- Language preference saved to **SharedPreferences**
+- Automatically restored on app restart
+- Default: English if no preference saved
+
+### Key Translation Categories
+- **App Branding:** appName, appTagline
+- **Auth:** login, signUp, email, password, logout
+- **Navigation:** home, profile, marketplace
+- **Categories:** games, consoles, accessories, electronics
+- **Actions:** save, cancel, delete, edit, contactSeller
+- **Validation:** requiredField, invalidEmail, passwordTooShort
+- **Messages:** changesSaved, listingSuccess, listingError
+
+### Dependencies
+```yaml
+flutter_localizations: sdk
+intl: any
+shared_preferences: ^2.3.5
+```
 
 ---
 

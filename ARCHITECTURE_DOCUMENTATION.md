@@ -591,6 +591,7 @@ This app follows the **BLoC (Business Logic Component)** pattern with **Cubit** 
 │  - LoginScreen, HomeScreen, ProfileScreen, etc.              │
 │  - CustomButton, CustomTextField, LoadingWidget              │
 │  - Listen to Cubits and rebuild when state changes           │
+│  - All UI text uses AppLocalizations for i18n               │
 └─────────────────────────────────────────────────────────────┘
                             ↑    ↓
           emit() states     │    │ listen() to states
@@ -601,6 +602,7 @@ This app follows the **BLoC (Business Logic Component)** pattern with **Cubit** 
 │  - ItemCubit (items/listings state)                          │
 │  - FavoriteCubit (favorites state)                           │
 │  - ProfileCubit (profile state)                              │
+│  - LanguageCubit (localization state)                        │
 │  - Each Cubit manages business logic and state               │
 │  - Cubits call Repositories for data operations              │
 └─────────────────────────────────────────────────────────────┘
@@ -624,6 +626,7 @@ This app follows the **BLoC (Business Logic Component)** pattern with **Cubit** 
 │  - ItemService (Supabase items table CRUD)                   │
 │  - UserService (Supabase users table CRUD)                   │
 │  - FavoriteService (Supabase favorites table CRUD)           │
+│  - LanguageService (SharedPreferences for language pref)     │
 │  - SupabaseService (Supabase client singleton)               │
 │  - Direct database and storage access                        │
 └─────────────────────────────────────────────────────────────┘
@@ -1254,6 +1257,70 @@ Tabs show listings and favorites
 
 ---
 
+### 4.5 LanguageCubit - Localization Management
+
+**File:** `lib/logic/language_cubit/language_cubit.dart`
+
+**Responsibility:** Manage app language/locale (English/French) with persistent storage
+
+**States:**
+- `LanguageInitial` - Default state before loading
+- `LanguageLoaded` - Language loaded, contains Locale (en or fr)
+
+**Key Methods:**
+```dart
+Future<void> loadLanguage()
+// Load saved language preference from SharedPreferences
+// Called on app startup
+// Emits: LanguageLoaded(locale)
+
+Future<void> changeLanguage(Locale locale)
+// Change app language
+// Saves to SharedPreferences for persistence
+// Emits: LanguageLoaded(newLocale)
+
+Locale get currentLocale
+// Get current selected locale
+```
+
+**Language Change Flow:**
+```
+User taps language toggle in ProfileScreen
+    ↓
+Calls: context.read<LanguageCubit>().changeLanguage(newLocale)
+    ↓
+LanguageCubit saves locale to SharedPreferences via LanguageService
+    ↓
+LanguageCubit emits: LanguageLoaded(newLocale)
+    ↓
+BlocBuilder in MyApp rebuilds MaterialApp with new locale
+    ↓
+All screens update with new language strings
+```
+
+**Supported Locales:**
+- `Locale('en')` - English
+- `Locale('fr')` - French
+
+**Data Flow Example:**
+```
+App starts
+    ↓
+LanguageCubit.loadLanguage()
+    ↓
+LanguageService.getLanguage() from SharedPreferences
+    ↓
+Returns saved language code (or 'en' default)
+    ↓
+LanguageCubit emits: LanguageLoaded(Locale(savedCode))
+    ↓
+MaterialApp rebuilds with correct locale
+    ↓
+UI displays in selected language
+```
+
+---
+
 ## 🎨 5. REUSABLE COMPONENTS & HELPERS
 
 ### 5.1 CustomButton Widget
@@ -1759,6 +1826,18 @@ supabase_flutter: ^2.10.3
   # Database, Authentication, Storage
   # Real-time updates
 
+flutter_localizations: (SDK)
+  # Flutter's official localization support
+  # Provides locale-specific formatting and translations
+  
+intl: any
+  # Internationalization and localization utilities
+  # Used with flutter_localizations for ARB file generation
+
+shared_preferences: ^2.3.5
+  # Local persistent storage
+  # Used to save user's language preference
+
 flutter_dotenv: ^5.1.0
   # Load environment variables from .env file
   # For storing API keys securely
@@ -1777,15 +1856,203 @@ equatable: ^2.0.5
 
 ---
 
+## 🌍 9. INTERNATIONALIZATION (i18n)
+
+### 9.1 Localization Setup
+
+**Configuration File:** `l10n.yaml`
+
+```yaml
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+```
+
+**Translation Files:**
+- `lib/l10n/app_en.arb` - English translations (220+ keys)
+- `lib/l10n/app_fr.arb` - French translations (220+ keys)
+
+**Generated Files:**
+- `lib/l10n/app_localizations.dart` - Main localization class
+- `lib/l10n/app_localizations_en.dart` - English implementation
+- `lib/l10n/app_localizations_fr.dart` - French implementation
+
+### 9.2 Translation Categories
+
+**App Branding:**
+```json
+"appName": "RePlay",
+"appTagline": "Trade. Play. Repeat."
+```
+
+**Authentication:**
+```json
+"login": "Login",
+"signUp": "Sign Up",
+"email": "Email",
+"password": "Password",
+"logout": "Logout"
+```
+
+**Navigation:**
+```json
+"home": "Home",
+"profile": "Profile",
+"marketplace": "Marketplace"
+```
+
+**Categories:**
+```json
+"games": "Games",
+"consoles": "Consoles",
+"accessories": "Accessories",
+"electronics": "Electronics"
+```
+
+**Actions:**
+```json
+"save": "Save",
+"cancel": "Cancel",
+"delete": "Delete",
+"edit": "Edit",
+"contactSeller": "Contact Seller"
+```
+
+**Validation & Errors:**
+```json
+"requiredField": "This field is required",
+"invalidEmail": "Please enter a valid email",
+"passwordTooShort": "Password must be at least 6 characters",
+"listingError": "Failed to create listing"
+```
+
+### 9.3 Usage in Screens
+
+**Getting Localizations:**
+```dart
+@override
+Widget build(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  
+  return Text(l10n.appName); // "RePlay"
+}
+```
+
+**Example from LoginScreen:**
+```dart
+CustomButton(
+  text: l10n.login,  // "Login" or "Connexion"
+  onPressed: _handleLogin,
+)
+```
+
+**Example from ProfileScreen:**
+```dart
+// Language switcher
+ListTile(
+  leading: Icon(Icons.language),
+  title: Text(l10n.language),  // "Language" or "Langue"
+  trailing: DropdownButton<String>(
+    value: currentLanguage,
+    items: [
+      DropdownMenuItem(
+        value: 'en',
+        child: Text(l10n.english),  // "English" or "Anglais"
+      ),
+      DropdownMenuItem(
+        value: 'fr',
+        child: Text(l10n.french),  // "French" or "Français"
+      ),
+    ],
+    onChanged: (value) => _changeLanguage(value!),
+  ),
+)
+```
+
+### 9.4 MaterialApp Localization Setup
+
+**File:** `lib/main.dart`
+
+```dart
+MaterialApp(
+  // Localization delegates
+  localizationsDelegates: const [
+    AppLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  
+  // Supported locales
+  supportedLocales: const [
+    Locale('en'), // English
+    Locale('fr'), // French
+  ],
+  
+  // Listen to LanguageCubit for locale changes
+  locale: locale, // From BlocBuilder<LanguageCubit>
+  
+  // Rest of app...
+)
+```
+
+### 9.5 Language Persistence
+
+**Service:** `lib/data/datasources/language_service.dart`
+
+```dart
+class LanguageService {
+  static const String _languageKey = 'selected_language';
+
+  // Save language preference
+  static Future<void> saveLanguage(String languageCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, languageCode);
+  }
+
+  // Get saved language (defaults to 'en')
+  static Future<String> getLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_languageKey) ?? 'en';
+  }
+}
+```
+
+**Persistence Flow:**
+```
+User changes language
+    ↓
+LanguageCubit.changeLanguage(newLocale)
+    ↓
+LanguageService.saveLanguage(languageCode) → SharedPreferences
+    ↓
+LanguageCubit emits LanguageLoaded(newLocale)
+    ↓
+App rebuilds with new language
+    ↓
+User closes app
+    ↓
+User reopens app
+    ↓
+LanguageCubit.loadLanguage()
+    ↓
+LanguageService.getLanguage() → reads from SharedPreferences
+    ↓
+App starts with saved language
+```
+
+---
+
 ## ✅ SUMMARY
 
 The **RePlay** app is a well-structured Flutter application using:
 
 1. **Architecture:** Cubit + Repository + Service pattern
 2. **UI:** 8 main screens with bottom navigation + modals
-3. **State:** 4 Cubits managing auth, items, profile, favorites
+3. **State:** 5 Cubits managing auth, items, profile, favorites, and language
 4. **Backend:** Supabase for database, auth, and storage
-5. **Features:** Browse items, add listings, search/filter, favorites, contact sellers
+5. **Localization:** Full English/French support with persistent preference
+6. **Features:** Browse items, add listings, search/filter, favorites, contact sellers, language switching
 
 The three-layer architecture (UI → Logic → Data) provides:
 - **Separation of concerns:** Each layer has a specific responsibility
@@ -1793,6 +2060,17 @@ The three-layer architecture (UI → Logic → Data) provides:
 - **Testability:** Easy to write unit/widget tests
 - **Scalability:** Easy to add new features or modify existing ones
 - **Maintainability:** Clear code organization and flow
+- **Internationalization:** Multi-language support with easy extensibility
+
+**Key Features Implemented:**
+- ✅ User authentication (login/register/logout)
+- ✅ Browse gaming marketplace with search & filters
+- ✅ Create, edit, delete listings
+- ✅ Favorite items
+- ✅ User profiles with image upload
+- ✅ Contact sellers via phone/email/WhatsApp
+- ✅ Full English & French localization
+- ✅ Persistent language preference
 
 ---
 
