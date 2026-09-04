@@ -109,12 +109,15 @@ For a full breakdown of every screen, cubit, and data flow, see:
 
 3. **Configure environment variables**
 
-   Create a `.env` file inside the `app/` directory:
+   Copy the example file and fill in your own Supabase credentials:
+   ```bash
+   cp .env.example .env
+   ```
    ```env
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
-   > Find these values in your Supabase project under **Settings → API**.
+   > Find these values in your Supabase project under **Settings → API**. `.env` is gitignored — never commit it.
 
 4. **Run the app**
    ```bash
