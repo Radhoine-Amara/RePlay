@@ -8,19 +8,12 @@
 
 ## 📸 Screenshots
 
-<!--
-  Screenshots go here. Drop image files into a `screenshots/` folder at the repo root
-  and reference them like the row below, e.g. screenshots/home.png, screenshots/login.png ...
--->
-
 <p align="center">
-  <img src="screenshots/splash.png" width="200" alt="Splash Screen" />
-  <img src="screenshots/login.png" width="200" alt="Login Screen" />
-  <img src="screenshots/home.png" width="200" alt="Home Screen" />
-  <img src="screenshots/product.png" width="200" alt="Product Details" />
+  <img src="screenshots/login.jpg" width="200" alt="Login Screen" />
+  <img src="screenshots/home.jpg" width="200" alt="Home Screen" />
+  <img src="screenshots/add-listing.jpg" width="200" alt="Add Listing Screen" />
+  <img src="screenshots/profile.jpg" width="200" alt="Profile / Favorites Screen" />
 </p>
-
-*(Screenshots coming soon — replace the placeholders above once added to `screenshots/`.)*
 
 ---
 
